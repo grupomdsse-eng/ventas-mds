@@ -7,6 +7,8 @@ Este proyecto genera dos envoltorios nativos que usan la aplicación PHP ya publ
 
 La aplicación requiere conexión a Internet, porque datos, usuarios y archivos siguen protegidos y centralizados en el servidor de MDS Ventas.
 
+La APK incluye gestos laterales: desliza desde el borde izquierdo hacia la derecha para volver, y desde el borde derecho hacia la izquierda para avanzar. Solo se activan al empezar en el borde, por lo que no interfieren con el tablero ni con las conversaciones.
+
 ## Generación automática con GitHub
 
 1. Ejecuta `powershell -ExecutionPolicy Bypass -File .\PREPARAR-GITHUB.ps1` y usa el ZIP que genera para crear un repositorio privado en GitHub. No subas `node_modules`, `dist` ni el APK generado. Consulta [SUBIR-A-GITHUB.md](SUBIR-A-GITHUB.md) para los pasos completos.

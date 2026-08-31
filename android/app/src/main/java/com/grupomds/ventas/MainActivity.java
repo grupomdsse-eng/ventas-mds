@@ -2,12 +2,17 @@ package com.grupomds.ventas;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.MotionEvent;
+import android.webkit.WebView;
 
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private float swipeStartX;
+    private float swipeStartY;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,5 +25,49 @@ public class MainActivity extends BridgeActivity {
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         bars.setAppearanceLightStatusBars(false);
         bars.setAppearanceLightNavigationBars(false);
+
+        configureEdgeNavigation();
+    }
+
+    /**
+     * Mantiene los gestos dentro de los bordes para no interferir con el tablero
+     * Kanban ni con el desplazamiento normal de listas y conversaciones.
+     */
+    private void configureEdgeNavigation() {
+        WebView webView = getBridge().getWebView();
+        final float density = getResources().getDisplayMetrics().density;
+        final float edgeWidth = 28 * density;
+        final float minimumDistance = 86 * density;
+
+        webView.setOnTouchListener((view, event) -> {
+            if (event.getPointerCount() != 1) {
+                return false;
+            }
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                swipeStartX = event.getX();
+                swipeStartY = event.getY();
+                return false;
+            }
+            if (event.getActionMasked() != MotionEvent.ACTION_UP) {
+                return false;
+            }
+
+            float deltaX = event.getX() - swipeStartX;
+            float deltaY = event.getY() - swipeStartY;
+            boolean horizontalSwipe = Math.abs(deltaX) > minimumDistance
+                    && Math.abs(deltaX) > Math.abs(deltaY) * 1.45f;
+            if (!horizontalSwipe) {
+                return false;
+            }
+            if (swipeStartX <= edgeWidth && deltaX > 0 && webView.canGoBack()) {
+                webView.goBack();
+                return true;
+            }
+            if (swipeStartX >= view.getWidth() - edgeWidth && deltaX < 0 && webView.canGoForward()) {
+                webView.goForward();
+                return true;
+            }
+            return false;
+        });
     }
 }
