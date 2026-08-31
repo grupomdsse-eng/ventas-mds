@@ -20,8 +20,8 @@ public class MainActivity extends BridgeActivity {
         // Mantiene el WebView dentro de las barras del sistema: evita que el
         // contenido remoto quede oculto tras la cámara, la hora o la barra inferior.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
-        getWindow().setStatusBarColor(Color.rgb(6, 44, 95));
-        getWindow().setNavigationBarColor(Color.rgb(4, 29, 67));
+        getWindow().setStatusBarColor(Color.rgb(0, 116, 199));
+        getWindow().setNavigationBarColor(Color.rgb(0, 91, 156));
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         bars.setAppearanceLightStatusBars(false);
         bars.setAppearanceLightNavigationBars(false);
