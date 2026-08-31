@@ -1,4 +1,5 @@
 const { app, BrowserWindow, shell } = require('electron');
+const path = require('path');
 
 const appUrl = process.env.MDS_VENTAS_URL || 'https://ventasmds.matriculadosdelsur.com';
 
@@ -9,6 +10,7 @@ function createWindow() {
     width: 1440,
     height: 920,
     title: 'MDS Ventas',
+    icon: path.join(__dirname, 'assets', 'icon.ico'),
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
