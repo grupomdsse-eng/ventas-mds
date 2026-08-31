@@ -1,0 +1,44 @@
+{
+  "name": "mds-ventas-native",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Grupo MDS",
+  "description": "Aplicaciones instalables de MDS Ventas para Windows y Android.",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "desktop": "electron .",
+    "build:windows": "electron-builder --win nsis",
+    "android:sync": "cap sync android",
+    "android:debug": "cd android && gradlew.bat assembleDebug",
+    "android:release": "cd android && gradlew.bat assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12",
+    "typescript": "^7.0.2"
+  },
+  "build": {
+    "appId": "com.grupomds.ventas",
+    "productName": "MDS Ventas",
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

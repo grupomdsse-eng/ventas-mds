@@ -1,0 +1,12 @@
+{
+  "appId": "com.grupomds.ventas",
+  "appName": "MDS Ventas",
+  "webDir": "web",
+  "server": {
+    "url": "https://ventasmds.matriculadosdelsur.com",
+    "allowNavigation": ["ventasmds.matriculadosdelsur.com"]
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
