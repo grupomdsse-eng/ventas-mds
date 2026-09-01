@@ -30,9 +30,15 @@ jobs:
           java-version: '21'
       - run: npm ci
       - run: npx cap sync android
-      - name: Configurar Firebase Cloud Messaging
-        if: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_BASE64 != '' }}
-        run: echo "${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > android/app/google-services.json
+      - name: Configurar Firebase Cloud Messaging si está disponible
+        env:
+          FIREBASE_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.FIREBASE_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -n "$FIREBASE_GOOGLE_SERVICES_JSON_BASE64" ]; then
+            printf '%s' "$FIREBASE_GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+          else
+            echo "Firebase todavía no está configurado: se generará la APK sin avisos push en segundo plano."
+          fi
       - run: chmod +x android/gradlew
       - run: cd android && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
