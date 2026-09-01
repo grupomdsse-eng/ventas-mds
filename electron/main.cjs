@@ -1,10 +1,13 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, Tray, Menu } = require('electron');
 const path = require('path');
 
 const appUrl = process.env.MDS_VENTAS_URL || 'https://ventasmds.matriculadosdelsur.com';
+let mainWindow;
+let tray;
+let exiting = false;
 
 function createWindow() {
-  const window = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     minWidth: 980,
     minHeight: 700,
     width: 1440,
@@ -15,16 +18,32 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      // Mantiene activo el sondeo de mensajes al minimizar la aplicación,
+      // para que Windows pueda mostrar los avisos del chat.
+      backgroundThrottling: false
     }
   });
 
-  window.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  window.loadURL(appUrl);
+  mainWindow.on('close', (event) => {
+    if (exiting) return;
+    event.preventDefault();
+    mainWindow.hide();
+  });
+
+  mainWindow.loadURL(appUrl);
+  return mainWindow;
+}
+
+function showWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) createWindow();
+  mainWindow.show();
+  mainWindow.focus();
 }
 
 app.whenReady().then(() => {
@@ -33,11 +52,17 @@ app.whenReady().then(() => {
     callback(permission === 'notifications');
   });
   createWindow();
+  tray = new Tray(path.join(__dirname, 'assets', 'icon.ico'));
+  tray.setToolTip('MDS Ventas');
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Abrir MDS Ventas', click: showWindow },
+    { type: 'separator' },
+    { label: 'Salir', click: () => { exiting = true; app.quit(); } }
+  ]));
+  tray.on('double-click', showWindow);
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    showWindow();
   });
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+app.on('before-quit', () => { exiting = true; });

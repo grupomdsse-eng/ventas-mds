@@ -1,12 +1,16 @@
 package com.grupomds.ventas;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.webkit.WebView;
 
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.app.ActivityCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -27,6 +31,17 @@ public class MainActivity extends BridgeActivity {
         bars.setAppearanceLightNavigationBars(false);
 
         configureEdgeNavigation();
+        requestNotificationPermission();
+    }
+
+    /** Solicita el permiso visible de Android 13+ para los avisos de MDS Ventas. */
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS}, 2001);
+        }
     }
 
     /**
