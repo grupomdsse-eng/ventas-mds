@@ -68,24 +68,43 @@ final class WidgetApi {
         final String name;
         final String email;
         final String phone;
+        final List<Integer> companyIds = new ArrayList<>();
 
         Client(JSONObject item) {
             id = item.optInt("id");
             name = item.optString("name", "Cliente");
             email = item.optString("email", "");
             phone = item.optString("phone", "");
+            String rawCompanies = item.optString("company_ids", "");
+            for (String value : rawCompanies.split(",")) {
+                try { if (!value.trim().isEmpty()) companyIds.add(Integer.parseInt(value.trim())); } catch (NumberFormatException ignored) { }
+            }
         }
+
+        boolean belongsTo(int companyId) { return companyIds.contains(companyId); }
+    }
+
+    static final class Company {
+        final int id;
+        final String name;
+
+        Company(JSONObject item) { id = item.optInt("id"); name = item.optString("name", "Empresa"); }
+        @Override public String toString() { return name; }
     }
 
     static final class OrderOptions {
         final String csrf;
+        final List<Company> companies;
         final List<Client> clients;
         final List<Contact> preparers;
+        final boolean canChoosePreparer;
 
-        OrderOptions(String csrf, List<Client> clients, List<Contact> preparers) {
+        OrderOptions(String csrf, List<Company> companies, List<Client> clients, List<Contact> preparers, boolean canChoosePreparer) {
             this.csrf = csrf;
+            this.companies = companies;
             this.clients = clients;
             this.preparers = preparers;
+            this.canChoosePreparer = canChoosePreparer;
         }
     }
 
@@ -209,13 +228,16 @@ final class WidgetApi {
 
     static OrderOptions loadOrderOptions() throws Exception {
         JSONObject source = getJson("widget_order_options");
+        List<Company> companies = new ArrayList<>();
         List<Client> clients = new ArrayList<>();
         List<Contact> preparers = new ArrayList<>();
+        JSONArray companyItems = source.optJSONArray("companies");
         JSONArray clientItems = source.optJSONArray("clients");
         JSONArray preparerItems = source.optJSONArray("preparers");
+        if (companyItems != null) for (int i = 0; i < companyItems.length(); i++) companies.add(new Company(companyItems.getJSONObject(i)));
         if (clientItems != null) for (int i = 0; i < clientItems.length(); i++) clients.add(new Client(clientItems.getJSONObject(i)));
         if (preparerItems != null) for (int i = 0; i < preparerItems.length(); i++) preparers.add(new Contact(preparerItems.getJSONObject(i)));
-        return new OrderOptions(source.optString("csrf"), clients, preparers);
+        return new OrderOptions(source.optString("csrf"), companies, clients, preparers, source.optBoolean("can_choose_preparer", false));
     }
 
     static List<String> loadClientAlerts(int clientId) throws Exception {
@@ -250,13 +272,14 @@ final class WidgetApi {
         output.writeBytes("\r\n");
     }
 
-    static OrderResult createOrder(String csrf, int clientId, int preparerId, String notes, File attachment) throws Exception {
+    static OrderResult createOrder(String csrf, int companyId, int clientId, int preparerId, String notes, File attachment) throws Exception {
         String boundary = "----MdsVentas" + System.currentTimeMillis();
         HttpURLConnection connection = open("widget_create_order", "POST");
         connection.setDoOutput(true);
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         try (DataOutputStream output = new DataOutputStream(connection.getOutputStream())) {
             writeField(output, boundary, "csrf", csrf);
+            writeField(output, boundary, "company_id", String.valueOf(companyId));
             writeField(output, boundary, "client_id", String.valueOf(clientId));
             writeField(output, boundary, "requested_assignee_id", String.valueOf(preparerId));
             writeField(output, boundary, "notes", notes);

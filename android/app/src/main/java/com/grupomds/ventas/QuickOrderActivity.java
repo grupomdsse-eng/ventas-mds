@@ -13,6 +13,7 @@ import android.provider.OpenableColumns;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -46,9 +47,12 @@ public class QuickOrderActivity extends AppCompatActivity {
     private static final int CAMERA_PERMISSION_REQUEST = 6103;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final List<WidgetApi.Client> clients = new ArrayList<>();
+    private final List<WidgetApi.Client> filteredClients = new ArrayList<>();
     private final List<WidgetApi.Contact> preparers = new ArrayList<>();
     private AutoCompleteTextView clientInput;
+    private Spinner companyInput;
     private Spinner preparerInput;
+    private TextView preparerLabel;
     private EditText notesInput;
     private TextView status;
     private ImageView photoPreview;
@@ -62,8 +66,10 @@ public class QuickOrderActivity extends AppCompatActivity {
     @Override protected void onCreate(@Nullable Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.activity_quick_order);
+        companyInput = findViewById(R.id.quick_order_company);
         clientInput = findViewById(R.id.quick_order_client);
         preparerInput = findViewById(R.id.quick_order_preparer);
+        preparerLabel = findViewById(R.id.quick_order_preparer_label);
         notesInput = findViewById(R.id.quick_order_notes);
         status = findViewById(R.id.quick_order_status);
         photoPreview = findViewById(R.id.quick_order_photo_preview);
@@ -74,14 +80,18 @@ public class QuickOrderActivity extends AppCompatActivity {
         findViewById(R.id.quick_order_file).setOnClickListener(view -> openFilePicker());
         submit.setOnClickListener(view -> submitOrder());
         clientInput.setOnItemClickListener((parent, view, position, id) -> {
-            selectedClientId = clients.get(position).id;
+            selectedClientId = filteredClients.get(position).id;
             showClientAlerts(selectedClientId);
+        });
+        companyInput.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) { filterClients(); }
+            @Override public void onNothingSelected(AdapterView<?> parent) { filterClients(); }
         });
         loadOptions();
     }
 
     private void loadOptions() {
-        setLoading(true, "Cargando clientes y preparadores…");
+        setLoading(true, "Cargando empresas, clientes y preparadores…");
         executor.execute(() -> {
             try {
                 WidgetApi.OrderOptions result = WidgetApi.loadOrderOptions();
@@ -96,14 +106,29 @@ public class QuickOrderActivity extends AppCompatActivity {
         options = result;
         clients.clear(); clients.addAll(result.clients);
         preparers.clear(); preparers.addAll(result.preparers);
-        List<String> clientNames = new ArrayList<>();
-        for (WidgetApi.Client client : clients) clientNames.add(client.name);
-        clientInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, clientNames));
+        companyInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, result.companies));
         List<String> preparerNames = new ArrayList<>();
         preparerNames.add("Cualquier persona de Pedidos");
         for (WidgetApi.Contact contact : preparers) preparerNames.add(contact.name);
         preparerInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, preparerNames));
-        setLoading(false, clients.isEmpty() ? "No hay clientes disponibles." : "Completa los datos del pedido.");
+        boolean showPreparer = result.canChoosePreparer;
+        preparerInput.setVisibility(showPreparer ? View.VISIBLE : View.GONE);
+        preparerLabel.setVisibility(showPreparer ? View.VISIBLE : View.GONE);
+        filterClients();
+        setLoading(false, result.companies.isEmpty() ? "No tienes ninguna empresa asignada para crear pedidos." : "Selecciona empresa y cliente.");
+    }
+
+    private void filterClients() {
+        filteredClients.clear(); selectedClientId = 0;
+        clientInput.setText("");
+        if (options == null || companyInput.getSelectedItemPosition() < 0 || options.companies.isEmpty()) { clientInput.setEnabled(false); return; }
+        int companyId = options.companies.get(companyInput.getSelectedItemPosition()).id;
+        for (WidgetApi.Client client : clients) if (client.belongsTo(companyId)) filteredClients.add(client);
+        List<String> names = new ArrayList<>();
+        for (WidgetApi.Client client : filteredClients) names.add(client.name);
+        clientInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, names));
+        clientInput.setEnabled(true);
+        clientInput.setHint(filteredClients.isEmpty() ? "No hay clientes de esta empresa" : "Escribe para buscar un cliente");
     }
 
     private void setLoading(boolean loading, String message) {
@@ -200,9 +225,9 @@ public class QuickOrderActivity extends AppCompatActivity {
     }
 
     private WidgetApi.Client selectedClient() {
-        if (selectedClientId > 0) for (WidgetApi.Client client : clients) if (client.id == selectedClientId) return client;
+        if (selectedClientId > 0) for (WidgetApi.Client client : filteredClients) if (client.id == selectedClientId) return client;
         String text = clientInput.getText().toString().trim();
-        for (WidgetApi.Client client : clients) if (client.name.equalsIgnoreCase(text)) { selectedClientId = client.id; return client; }
+        for (WidgetApi.Client client : filteredClients) if (client.name.equalsIgnoreCase(text)) { selectedClientId = client.id; return client; }
         return null;
     }
 
@@ -229,18 +254,21 @@ public class QuickOrderActivity extends AppCompatActivity {
     }
 
     private void submitOrder() {
-        WidgetApi.Client client = selectedClient();
         if (options == null) { Toast.makeText(this, "Todavía se están cargando los datos.", Toast.LENGTH_SHORT).show(); return; }
+        if (options.companies.isEmpty() || companyInput.getSelectedItemPosition() < 0) { Toast.makeText(this, "Selecciona una empresa.", Toast.LENGTH_SHORT).show(); return; }
+        int companyId = options.companies.get(companyInput.getSelectedItemPosition()).id;
+        WidgetApi.Client client = selectedClient();
         if (client == null) { clientInput.setError("Selecciona un cliente de la lista."); clientInput.requestFocus(); return; }
-        int selectedPreparer = preparerInput.getSelectedItemPosition();
-        int preparerId = selectedPreparer > 0 && selectedPreparer - 1 < preparers.size() ? preparers.get(selectedPreparer - 1).id : 0;
+        int selectedPreparer = options.canChoosePreparer ? preparerInput.getSelectedItemPosition() : 0;
+        int preparerId = options.canChoosePreparer && selectedPreparer > 0 && selectedPreparer - 1 < preparers.size() ? preparers.get(selectedPreparer - 1).id : 0;
         setLoading(true, "Creando pedido…");
+        final int finalCompanyId = companyId;
         final int finalPreparerId = preparerId;
         executor.execute(() -> {
             try {
                 File file = compressedAttachment();
                 if (file != null && file.length() > 8L * 1024 * 1024) throw new IOException("La imagen supera el límite de 8 MB.");
-                WidgetApi.OrderResult result = WidgetApi.createOrder(options.csrf, client.id, finalPreparerId, notesInput.getText().toString().trim(), file);
+                WidgetApi.OrderResult result = WidgetApi.createOrder(options.csrf, finalCompanyId, client.id, finalPreparerId, notesInput.getText().toString().trim(), file);
                 runOnUiThread(() -> { Toast.makeText(this, "Pedido " + result.reference + " creado.", Toast.LENGTH_LONG).show(); finish(); });
             } catch (Exception error) {
                 runOnUiThread(() -> setLoading(false, error.getMessage() == null ? "No se pudo crear el pedido." : error.getMessage()));
