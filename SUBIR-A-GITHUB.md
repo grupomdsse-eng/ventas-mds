@@ -1,6 +1,6 @@
 # Publicar las aplicaciones de MDS Ventas desde GitHub
 
-1. En PowerShell, dentro de esta carpeta, ejecuta `powershell -ExecutionPolicy Bypass -File .\PREPARAR-GITHUB.ps1`. Se creará `MDS-Ventas-Native-GitHub.zip` en la carpeta padre.
+1. En PowerShell, dentro de esta carpeta, ejecuta `powershell -ExecutionPolicy Bypass -File .\PREPARAR-GITHUB.ps1`. Se creará `MDS-Ventas-Native-v6-GitHub.zip` en la carpeta padre.
 2. En GitHub crea un repositorio **privado**, por ejemplo `mds-ventas-instaladores`.
 3. Descomprime el ZIP y sube su contenido a la raíz del repositorio. No subas `node_modules`, `dist`, APKs, EXEs, `android/local.properties` ni `google-services.json`.
 4. Confirma la subida a la rama `main`.
