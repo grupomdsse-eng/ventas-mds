@@ -7,4 +7,5 @@
     <string name="widget_description_due_flows">Flujos que vencen hoy y mañana</string>
     <string name="widget_description_direct_chat">Acceso directo a una conversación</string>
     <string name="widget_description_quick_order">Crear un pedido rápido</string>
+    <string name="widget_description_pending_orders">Pedidos pendientes en MDS Ventas</string>
 </resources>

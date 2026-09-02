@@ -2,8 +2,10 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/widget_direct_chat"
     android:configure="com.grupomds.ventas.ChatWidgetConfigureActivity"
-    android:minWidth="180dp"
-    android:minHeight="100dp"
+    android:minWidth="48dp"
+    android:minHeight="48dp"
+    android:targetCellWidth="1"
+    android:targetCellHeight="1"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_description_direct_chat" />

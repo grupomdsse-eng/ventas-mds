@@ -1,6 +1,8 @@
 package com.grupomds.ventas;
 
 import android.webkit.CookieManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,6 +31,9 @@ final class WidgetApi {
         final int id;
         final String title;
         final String clientName;
+        final String stageName;
+        final String stageColor;
+        final String color;
         final String dueDay;
         final String dueTime;
 
@@ -36,6 +41,9 @@ final class WidgetApi {
             id = item.optInt("id");
             title = item.optString("title", "Tarea sin nombre");
             clientName = item.optString("client_name", "Sin cliente");
+            stageName = item.optString("stage_name", "Tarea");
+            stageColor = item.optString("stage_color", "sky");
+            color = item.optString("color", "");
             dueDay = item.optString("due_day", "");
             dueTime = item.optString("due_time", "");
         }
@@ -45,11 +53,13 @@ final class WidgetApi {
         final int id;
         final String name;
         final String role;
+        final String avatarPath;
 
         Contact(JSONObject item) {
             id = item.optInt("id");
             name = item.optString("name", "Usuario");
             role = item.optString("role", "");
+            avatarPath = item.optString("avatar_path", "");
         }
     }
 
@@ -87,6 +97,29 @@ final class WidgetApi {
             id = item.optInt("id");
             reference = item.optString("reference", "Pedido creado");
         }
+    }
+
+    static final class PendingOrder {
+        final int id;
+        final String reference;
+        final String clientName;
+        final String preparerName;
+        final String createdAt;
+
+        PendingOrder(JSONObject item) {
+            id = item.optInt("id");
+            reference = item.optString("reference", "Pedido pendiente");
+            clientName = item.optString("client_name", "Sin cliente");
+            preparerName = item.optString("preparer_name", "Pedidos");
+            createdAt = item.optString("created_at", "");
+        }
+    }
+
+    static final class PendingOrders {
+        final int total;
+        final List<PendingOrder> items;
+
+        PendingOrders(int total, List<PendingOrder> items) { this.total = total; this.items = items; }
     }
 
     private WidgetApi() { }
@@ -150,6 +183,28 @@ final class WidgetApi {
         List<Contact> contacts = new ArrayList<>();
         if (source != null) for (int i = 0; i < source.length(); i++) contacts.add(new Contact(source.getJSONObject(i)));
         return contacts;
+    }
+
+    static PendingOrders loadPendingOrders() throws Exception {
+        JSONObject source = getJson("widget_pending_orders");
+        JSONArray items = source.optJSONArray("items");
+        List<PendingOrder> orders = new ArrayList<>();
+        if (items != null) for (int i = 0; i < items.length(); i++) orders.add(new PendingOrder(items.getJSONObject(i)));
+        return new PendingOrders(source.optInt("total", orders.size()), orders);
+    }
+
+    static Bitmap loadAvatar(String path) throws IOException {
+        if (path == null || !path.matches("uploads/avatars/[A-Za-z0-9._-]+")) return null;
+        HttpURLConnection connection = (HttpURLConnection) new URL(BASE_URL + "/" + path).openConnection();
+        connection.setConnectTimeout(TIMEOUT_MS); connection.setReadTimeout(TIMEOUT_MS); connection.setInstanceFollowRedirects(false);
+        String cookies = CookieManager.getInstance().getCookie(BASE_URL);
+        if (cookies != null && !cookies.trim().isEmpty()) connection.setRequestProperty("Cookie", cookies);
+        int code = connection.getResponseCode(); saveCookies(connection);
+        Bitmap bitmap = null;
+        if (code >= 200 && code < 300) {
+            try (InputStream input = connection.getInputStream()) { bitmap = BitmapFactory.decodeStream(input); }
+        }
+        connection.disconnect(); return bitmap;
     }
 
     static OrderOptions loadOrderOptions() throws Exception {

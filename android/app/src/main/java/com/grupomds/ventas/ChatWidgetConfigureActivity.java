@@ -65,7 +65,8 @@ public class ChatWidgetConfigureActivity extends AppCompatActivity {
     private void chooseContact(WidgetApi.Contact contact) {
         getSharedPreferences(WidgetUpdater.PREFS, MODE_PRIVATE).edit()
                 .putInt(WidgetUpdater.CHAT_ID + widgetId, contact.id)
-                .putString(WidgetUpdater.CHAT_NAME + widgetId, contact.name).apply();
+                .putString(WidgetUpdater.CHAT_NAME + widgetId, contact.name)
+                .putString(WidgetUpdater.CHAT_AVATAR + widgetId, contact.avatarPath).apply();
         AppWidgetManager manager = AppWidgetManager.getInstance(this);
         WidgetUpdater.updateChatWidgets(this, manager, new int[]{widgetId});
         Intent result = new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
