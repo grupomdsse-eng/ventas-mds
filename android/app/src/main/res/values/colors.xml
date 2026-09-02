@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#0074C7</color>
+    <color name="colorPrimaryDark">#005B9C</color>
+    <color name="colorAccent">#FFB522</color>
+    <color name="mds_blue">#0074C7</color>
+    <color name="mds_blue_dark">#005B9C</color>
+    <color name="mds_orange">#FFB522</color>
+    <color name="widget_ink">#102D50</color>
+    <color name="widget_muted">#52708D</color>
+</resources>

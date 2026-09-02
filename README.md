@@ -7,6 +7,10 @@ Este proyecto genera dos envoltorios nativos que usan la aplicación PHP ya publ
 
 La aplicación requiere conexión a Internet, porque datos, usuarios y archivos siguen protegidos y centralizados en el servidor de MDS Ventas.
 
+## Widgets de Android
+
+La APK incluye tres widgets para la pantalla de inicio: **Flujos próximos** muestra las tareas que vencen hoy y mañana; **Chat directo** permite elegir una persona y abrir su conversación; y **Pedido rápido** abre un formulario nativo con cliente, preparador, notas y cámara. Para que los widgets puedan consultar datos, inicia sesión una vez en la APK y marca “Mantener mi sesión iniciada”. Android actualiza el widget de flujos aproximadamente cada 30 minutos y también al volver a abrir la aplicación; incluye un botón de actualización manual.
+
 La APK incluye gestos laterales: desliza desde el borde izquierdo hacia la derecha para volver, y desde el borde derecho hacia la izquierda para avanzar. Solo se activan al empezar en el borde, por lo que no interfieren con el tablero ni con las conversaciones.
 
 ## Generación automática con GitHub

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/widget_direct_chat"
+    android:configure="com.grupomds.ventas.ChatWidgetConfigureActivity"
+    android:minWidth="180dp"
+    android:minHeight="100dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="Acceso directo a una conversación" />

@@ -1,6 +1,7 @@
 package com.grupomds.ventas;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
@@ -14,6 +15,7 @@ import androidx.core.app.ActivityCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    public static final String EXTRA_WIDGET_URL = "com.grupomds.ventas.WIDGET_URL";
     private float swipeStartX;
     private float swipeStartY;
 
@@ -32,6 +34,27 @@ public class MainActivity extends BridgeActivity {
 
         configureEdgeNavigation();
         requestNotificationPermission();
+        openWidgetRoute(getIntent());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        WidgetUpdater.refreshAll(this);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        openWidgetRoute(intent);
+    }
+
+    /** Abre dentro del WebView la pantalla concreta solicitada por un widget. */
+    private void openWidgetRoute(Intent intent) {
+        String url = intent == null ? null : intent.getStringExtra(EXTRA_WIDGET_URL);
+        if (url == null || !url.startsWith(WidgetApi.BASE_URL)) return;
+        getBridge().getWebView().postDelayed(() -> getBridge().getWebView().loadUrl(url), 180);
     }
 
     /** Solicita el permiso visible de Android 13+ para los avisos de MDS Ventas. */

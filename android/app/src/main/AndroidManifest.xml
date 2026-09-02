@@ -24,6 +24,46 @@
 
         </activity>
 
+        <activity
+            android:name=".QuickOrderActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.WidgetActivity" />
+
+        <activity
+            android:name=".ChatWidgetConfigureActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme.WidgetActivity" />
+
+        <receiver
+            android:name=".DueFlowsWidgetProvider"
+            android:exported="false"
+            android:label="Flujos próximos · MDS Ventas">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/due_flows_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".ChatWidgetProvider"
+            android:exported="false"
+            android:label="Chat directo · MDS Ventas">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/direct_chat_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".QuickOrderWidgetProvider"
+            android:exported="false"
+            android:label="Pedido rápido · MDS Ventas">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_order_widget_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
