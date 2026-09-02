@@ -5,4 +5,4 @@
     android:minHeight="100dp"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="Crear un pedido rápido" />
+    android:description="@string/widget_description_quick_order" />

@@ -4,4 +4,7 @@
     <string name="title_activity_main">MDS Ventas</string>
     <string name="package_name">com.grupomds.ventas</string>
     <string name="custom_url_scheme">com.grupomds.ventas</string>
+    <string name="widget_description_due_flows">Flujos que vencen hoy y mañana</string>
+    <string name="widget_description_direct_chat">Acceso directo a una conversación</string>
+    <string name="widget_description_quick_order">Crear un pedido rápido</string>
 </resources>
