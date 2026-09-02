@@ -38,7 +38,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         WidgetUpdater.refreshAll(this);
     }
