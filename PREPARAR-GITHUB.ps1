@@ -2,7 +2,7 @@
 # No incluye dependencias, claves, APKs ni instaladores generados.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-Widgets-v3-GitHub.zip'
+$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-Widgets-v4-GitHub.zip'
 $temporary = Join-Path ([System.IO.Path]::GetTempPath()) ('mds-ventas-github-' + [guid]::NewGuid().ToString('N'))
 
 New-Item -ItemType Directory -Path $temporary | Out-Null
