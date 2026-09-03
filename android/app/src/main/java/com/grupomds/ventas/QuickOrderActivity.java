@@ -48,6 +48,7 @@ public class QuickOrderActivity extends AppCompatActivity {
     private static final int CAMERA_PERMISSION_REQUEST = 6103;
     private static final int AUDIO_PERMISSION_REQUEST = 6104;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final List<WidgetApi.Company> companyChoices = new ArrayList<>();
     private final List<WidgetApi.Client> clients = new ArrayList<>();
     private final List<WidgetApi.Client> filteredClients = new ArrayList<>();
     private final List<WidgetApi.Contact> preparers = new ArrayList<>();
@@ -87,8 +88,10 @@ public class QuickOrderActivity extends AppCompatActivity {
         audioButton.setOnClickListener(view -> toggleAudioRecording());
         submit.setOnClickListener(view -> submitOrder());
         clientInput.setOnItemClickListener((parent, view, position, id) -> {
-            selectedClientId = filteredClients.get(position).id;
-            showClientAlerts(selectedClientId);
+            String selected = String.valueOf(parent.getItemAtPosition(position));
+            selectedClientId = 0;
+            for (WidgetApi.Client client : filteredClients) if (client.name.equalsIgnoreCase(selected)) { selectedClientId = client.id; break; }
+            if (selectedClientId > 0) showClientAlerts(selectedClientId);
         });
         companyInput.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) { filterClients(); }
@@ -113,7 +116,12 @@ public class QuickOrderActivity extends AppCompatActivity {
         options = result;
         clients.clear(); clients.addAll(result.clients);
         preparers.clear(); preparers.addAll(result.preparers);
-        companyInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, result.companies));
+        companyChoices.clear();
+        companyChoices.add(new WidgetApi.Company(0, "Selecciona una empresa"));
+        companyChoices.addAll(result.companies);
+        companyInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, companyChoices));
+        companyInput.setSelection(0, false);
+        companyInput.setEnabled(!result.companies.isEmpty());
         List<String> preparerNames = new ArrayList<>();
         preparerNames.add("Cualquier persona de Pedidos");
         for (WidgetApi.Contact contact : preparers) preparerNames.add(contact.name);
@@ -128,8 +136,8 @@ public class QuickOrderActivity extends AppCompatActivity {
     private void filterClients() {
         filteredClients.clear(); selectedClientId = 0;
         clientInput.setText("");
-        if (options == null || companyInput.getSelectedItemPosition() < 0 || options.companies.isEmpty()) { clientInput.setEnabled(false); return; }
-        int companyId = options.companies.get(companyInput.getSelectedItemPosition()).id;
+        if (options == null || companyInput.getSelectedItemPosition() <= 0 || options.companies.isEmpty()) { clientInput.setEnabled(false); clientInput.setHint("Primero selecciona una empresa"); return; }
+        int companyId = companyChoices.get(companyInput.getSelectedItemPosition()).id;
         for (WidgetApi.Client client : clients) if (client.belongsTo(companyId)) filteredClients.add(client);
         List<String> names = new ArrayList<>();
         for (WidgetApi.Client client : filteredClients) names.add(client.name);
@@ -295,8 +303,8 @@ public class QuickOrderActivity extends AppCompatActivity {
 
     private void submitOrder() {
         if (options == null) { Toast.makeText(this, "Todavía se están cargando los datos.", Toast.LENGTH_SHORT).show(); return; }
-        if (options.companies.isEmpty() || companyInput.getSelectedItemPosition() < 0) { Toast.makeText(this, "Selecciona una empresa.", Toast.LENGTH_SHORT).show(); return; }
-        int companyId = options.companies.get(companyInput.getSelectedItemPosition()).id;
+        if (options.companies.isEmpty() || companyInput.getSelectedItemPosition() <= 0) { Toast.makeText(this, "Selecciona una empresa.", Toast.LENGTH_SHORT).show(); return; }
+        int companyId = companyChoices.get(companyInput.getSelectedItemPosition()).id;
         WidgetApi.Client client = selectedClient();
         if (client == null) { clientInput.setError("Selecciona un cliente de la lista."); clientInput.requestFocus(); return; }
         int selectedPreparer = options.canChoosePreparer ? preparerInput.getSelectedItemPosition() : 0;

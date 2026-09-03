@@ -31,13 +31,13 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(MdsAudioPlugin.class);
         super.onCreate(savedInstanceState);
 
-        // El WebView recibe exactamente los insets reales de cada móvil. Así la
-        // cabecera no queda detrás de la hora/cámara y el chat evita la barra inferior.
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        // La web calcula la altura disponible con el inset IME que enviamos
-        // abajo. No dejamos que Android reduzca además el WebView: esa doble
-        // compensación era la causa del hueco excesivo sobre el teclado.
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+        // Android reserva la zona de estado y el recorte de cámara antes de
+        // mostrar la web. Así ninguna cabecera queda bajo las notificaciones.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+        // El propio Android entrega al WebView únicamente el espacio libre
+        // sobre el teclado. La web utiliza esa única medida y no resta el IME
+        // una segunda vez.
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         getWindow().setStatusBarColor(Color.rgb(0, 116, 199));
         getWindow().setNavigationBarColor(Color.rgb(0, 91, 156));
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
@@ -46,8 +46,6 @@ public class MainActivity extends BridgeActivity {
 
         WebView content = getBridge().getWebView();
         ViewCompat.setOnApplyWindowInsetsListener(content, (view, insets) -> {
-            Insets safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-            view.setPadding(0, safe.top, 0, safe.bottom);
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
             int keyboardHeight = insets.isVisible(WindowInsetsCompat.Type.ime()) ? ime.bottom : 0;
             publishKeyboardInset((WebView) view, keyboardHeight);

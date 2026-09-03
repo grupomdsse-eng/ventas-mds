@@ -26,9 +26,11 @@
                 android:textStyle="bold" />
             <Button
                 android:id="@+id/quick_order_close"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Cerrar" />
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="Cerrar"
+                android:text="×"
+                android:textSize="28sp" />
         </LinearLayout>
 
         <TextView

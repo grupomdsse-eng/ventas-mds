@@ -106,7 +106,8 @@ final class WidgetApi {
         final int id;
         final String name;
 
-        Company(JSONObject item) { id = item.optInt("id"); name = item.optString("name", "Empresa"); }
+        Company(int id, String name) { this.id = id; this.name = name; }
+        Company(JSONObject item) { this(item.optInt("id"), item.optString("name", "Empresa")); }
         @Override public String toString() { return name; }
     }
 
