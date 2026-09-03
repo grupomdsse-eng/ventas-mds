@@ -15,9 +15,7 @@ import android.provider.OpenableColumns;
 import android.media.MediaRecorder;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.MimeTypeMap;
 import android.widget.ArrayAdapter;
-import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -44,7 +42,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -60,7 +57,10 @@ public class QuickOrderActivity extends AppCompatActivity {
     private final List<WidgetApi.Client> filteredClients = new ArrayList<>();
     private final List<WidgetApi.Contact> preparers = new ArrayList<>();
     private AutoCompleteTextView clientInput;
-    private Spinner companyInput;
+    /* El Spinner anterior dejaba el primer elemento "Selecciona una empresa"
+       como valor efectivo en algunos launchers. Un desplegable explícito evita
+       esa ambigüedad y permite buscar si el usuario tiene muchas empresas. */
+    private AutoCompleteTextView companyInput;
     private Spinner preparerInput;
     private TextView preparerLabel;
     private EditText notesInput;
@@ -69,6 +69,7 @@ public class QuickOrderActivity extends AppCompatActivity {
     private ProgressBar progress;
     private Button submit;
     private WidgetApi.OrderOptions options;
+    private int selectedCompanyId;
     private int selectedClientId;
     private File attachment;
     private File cameraOutput;
@@ -93,6 +94,9 @@ public class QuickOrderActivity extends AppCompatActivity {
         ViewCompat.requestApplyInsets(root);
         companyInput = findViewById(R.id.quick_order_company);
         clientInput = findViewById(R.id.quick_order_client);
+        // La empresa se selecciona siempre de la lista autorizada: así no es
+        // posible conservar por error una empresa anterior tras editar texto.
+        companyInput.setKeyListener(null);
         preparerInput = findViewById(R.id.quick_order_preparer);
         preparerLabel = findViewById(R.id.quick_order_preparer_label);
         notesInput = findViewById(R.id.quick_order_notes);
@@ -106,15 +110,28 @@ public class QuickOrderActivity extends AppCompatActivity {
         audioButton = findViewById(R.id.quick_order_audio);
         audioButton.setOnClickListener(view -> toggleAudioRecording());
         submit.setOnClickListener(view -> submitOrder());
-        clientInput.setOnItemClickListener((parent, view, position, id) -> {
-            String selected = String.valueOf(parent.getItemAtPosition(position));
-            selectedClientId = 0;
-            for (WidgetApi.Client client : filteredClients) if (client.name.equalsIgnoreCase(selected)) { selectedClientId = client.id; break; }
-            if (selectedClientId > 0) showClientAlerts(selectedClientId);
+        companyInput.setOnClickListener(view -> { if (companyInput.isEnabled()) companyInput.showDropDown(); });
+        companyInput.setOnItemClickListener((parent, view, position, id) -> {
+            Object selected = parent.getItemAtPosition(position);
+            if (selected instanceof WidgetApi.Company) {
+                WidgetApi.Company company = (WidgetApi.Company) selected;
+                selectedCompanyId = company.id;
+                companyInput.setText(company.name, false);
+                companyInput.setError(null);
+                filterClients();
+                status.setText(filteredClients.isEmpty()
+                        ? "No hay clientes asociados a " + company.name + "."
+                        : "Empresa " + company.name + " seleccionada. Ahora elige el cliente.");
+            }
         });
-        companyInput.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) { filterClients(); }
-            @Override public void onNothingSelected(AdapterView<?> parent) { filterClients(); }
+        clientInput.setOnClickListener(view -> { if (clientInput.isEnabled()) clientInput.showDropDown(); });
+        clientInput.setOnItemClickListener((parent, view, position, id) -> {
+            Object selected = parent.getItemAtPosition(position);
+            selectedClientId = selected instanceof WidgetApi.Client ? ((WidgetApi.Client) selected).id : 0;
+            if (selectedClientId > 0) {
+                clientInput.setError(null);
+                showClientAlerts(selectedClientId);
+            }
         });
         loadOptions();
     }
@@ -136,10 +153,11 @@ public class QuickOrderActivity extends AppCompatActivity {
         clients.clear(); clients.addAll(result.clients);
         preparers.clear(); preparers.addAll(result.preparers);
         companyChoices.clear();
-        companyChoices.add(new WidgetApi.Company(0, "Selecciona una empresa"));
         companyChoices.addAll(result.companies);
-        companyInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, companyChoices));
-        companyInput.setSelection(0, false);
+        companyInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, companyChoices));
+        companyInput.setText("", false);
+        companyInput.setHint(result.companies.isEmpty() ? "No hay empresas disponibles" : "Selecciona una empresa");
+        selectedCompanyId = 0;
         companyInput.setEnabled(!result.companies.isEmpty());
         List<String> preparerNames = new ArrayList<>();
         preparerNames.add("Cualquier persona de Pedidos");
@@ -154,13 +172,15 @@ public class QuickOrderActivity extends AppCompatActivity {
 
     private void filterClients() {
         filteredClients.clear(); selectedClientId = 0;
-        clientInput.setText("");
-        if (options == null || companyInput.getSelectedItemPosition() <= 0 || options.companies.isEmpty()) { clientInput.setEnabled(false); clientInput.setHint("Primero selecciona una empresa"); return; }
-        int companyId = companyChoices.get(companyInput.getSelectedItemPosition()).id;
-        for (WidgetApi.Client client : clients) if (client.belongsTo(companyId)) filteredClients.add(client);
-        List<String> names = new ArrayList<>();
-        for (WidgetApi.Client client : filteredClients) names.add(client.name);
-        clientInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, names));
+        clientInput.setText("", false);
+        if (options == null || selectedCompanyId <= 0 || options.companies.isEmpty()) {
+            clientInput.setAdapter(null);
+            clientInput.setEnabled(false);
+            clientInput.setHint("Primero selecciona una empresa");
+            return;
+        }
+        for (WidgetApi.Client client : clients) if (client.belongsTo(selectedCompanyId)) filteredClients.add(client);
+        clientInput.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, filteredClients));
         clientInput.setEnabled(true);
         clientInput.setHint(filteredClients.isEmpty() ? "No hay clientes de esta empresa" : "Escribe para buscar un cliente");
     }
@@ -311,9 +331,13 @@ public class QuickOrderActivity extends AppCompatActivity {
     }
 
     private WidgetApi.Client selectedClient() {
-        if (selectedClientId > 0) for (WidgetApi.Client client : filteredClients) if (client.id == selectedClientId) return client;
         String text = clientInput.getText().toString().trim();
-        for (WidgetApi.Client client : filteredClients) if (client.name.equalsIgnoreCase(text)) { selectedClientId = client.id; return client; }
+        if (selectedClientId > 0) {
+            for (WidgetApi.Client client : filteredClients) {
+                if (client.id == selectedClientId && (client.toString().equalsIgnoreCase(text) || client.name.equalsIgnoreCase(text))) return client;
+            }
+        }
+        for (WidgetApi.Client client : filteredClients) if (client.toString().equalsIgnoreCase(text) || client.name.equalsIgnoreCase(text)) { selectedClientId = client.id; return client; }
         return null;
     }
 
@@ -341,8 +365,8 @@ public class QuickOrderActivity extends AppCompatActivity {
 
     private void submitOrder() {
         if (options == null) { Toast.makeText(this, "Todavía se están cargando los datos.", Toast.LENGTH_SHORT).show(); return; }
-        if (options.companies.isEmpty() || companyInput.getSelectedItemPosition() <= 0) { Toast.makeText(this, "Selecciona una empresa.", Toast.LENGTH_SHORT).show(); return; }
-        int companyId = companyChoices.get(companyInput.getSelectedItemPosition()).id;
+        if (options.companies.isEmpty() || selectedCompanyId <= 0) { companyInput.setError("Selecciona una empresa."); companyInput.requestFocus(); companyInput.showDropDown(); return; }
+        int companyId = selectedCompanyId;
         WidgetApi.Client client = selectedClient();
         if (client == null) { clientInput.setError("Selecciona un cliente de la lista."); clientInput.requestFocus(); return; }
         int selectedPreparer = options.canChoosePreparer ? preparerInput.getSelectedItemPosition() : 0;

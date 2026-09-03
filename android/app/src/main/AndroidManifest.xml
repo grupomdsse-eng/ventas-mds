@@ -33,7 +33,8 @@
         <activity
             android:name=".QuickOrderActivity"
             android:exported="false"
-            android:theme="@style/AppTheme.WidgetActivity" />
+            android:theme="@style/AppTheme.WidgetActivity"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ChatWidgetConfigureActivity"

@@ -2,168 +2,302 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF8FBFD"
+    android:background="#FFF4F8FB"
+    android:clipToPadding="false"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:paddingStart="18dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="24dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/quick_order_header_background"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <TextView
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="16dp">
+
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Nuevo pedido"
-                android:textColor="@color/widget_ink"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.12"
+                    android:text="PEDIDOS"
+                    android:textColor="#BFE4FF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Nuevo pedido"
+                    android:textColor="#FFFFFFFF"
+                    android:textSize="25sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Selecciona la empresa antes del cliente."
+                    android:textColor="#DDECFA"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
             <Button
                 android:id="@+id/quick_order_close"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/quick_order_close_button"
                 android:contentDescription="Cerrar"
+                android:includeFontPadding="false"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
                 android:text="×"
-                android:textSize="28sp" />
+                android:textAllCaps="false"
+                android:textColor="#FFFFFFFF"
+                android:textSize="27sp" />
         </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Crea un pedido completo sin abrir la aplicación."
-            android:textColor="@color/widget_muted"
-            android:textSize="14sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Empresa"
-            android:textColor="@color/widget_ink"
-            android:textStyle="bold" />
-        <Spinner
-            android:id="@+id/quick_order_company"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Cliente"
-            android:textColor="@color/widget_ink"
-            android:textStyle="bold" />
-        <AutoCompleteTextView
-            android:id="@+id/quick_order_client"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:completionThreshold="1"
-            android:hint="Escribe para buscar un cliente"
-            android:inputType="textCapSentences"
-            android:padding="12dp" />
-
-        <TextView
-            android:id="@+id/quick_order_preparer_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Encargado de tramitar"
-            android:textColor="@color/widget_ink"
-            android:textStyle="bold" />
-        <Spinner
-            android:id="@+id/quick_order_preparer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Notas"
-            android:textColor="@color/widget_ink"
-            android:textStyle="bold" />
-        <EditText
-            android:id="@+id/quick_order_notes"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:gravity="top|start"
-            android:hint="Información necesaria para preparar el pedido"
-            android:inputType="textCapSentences|textMultiLine"
-            android:maxLength="5000"
-            android:padding="12dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Foto, documento o audio"
-            android:textColor="@color/widget_ink"
-            android:textStyle="bold" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <Button
-                android:id="@+id/quick_order_camera"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:backgroundTint="@color/mds_blue"
-                android:text="Abrir cámara"
-                android:textColor="#FFFFFFFF" />
-            <Button
-                android:id="@+id/quick_order_file"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="Subir archivo" />
-        </LinearLayout>
-        <Button
-            android:id="@+id/quick_order_audio"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Grabar audio" />
-        <ImageView
-            android:id="@+id/quick_order_photo_preview"
-            android:layout_width="match_parent"
-            android:layout_height="150dp"
-            android:layout_marginTop="8dp"
-            android:adjustViewBounds="true"
-            android:contentDescription="Vista previa de la foto del pedido"
-            android:scaleType="centerCrop"
-            android:visibility="gone" />
+            android:layout_marginTop="12dp"
+            android:background="@drawable/quick_order_form_card"
+            android:elevation="1dp"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <ProgressBar
-            android:id="@+id/quick_order_progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="16dp"
-            android:visibility="gone" />
-        <TextView
-            android:id="@+id/quick_order_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="@color/widget_muted"
-            android:textSize="13sp" />
-        <Button
-            android:id="@+id/quick_order_submit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="@color/mds_blue"
-            android:enabled="false"
-            android:text="Crear pedido"
-            android:textColor="#FFFFFFFF" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="EMPRESA"
+                android:textColor="@color/mds_blue"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <AutoCompleteTextView
+                android:id="@+id/quick_order_company"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/quick_order_input"
+                android:completionThreshold="0"
+                android:drawableEnd="@drawable/quick_order_chevron"
+                android:drawablePadding="10dp"
+                android:dropDownHeight="280dp"
+                android:dropDownVerticalOffset="4dp"
+                android:hint="Selecciona una empresa"
+                android:inputType="textCapSentences"
+                android:paddingStart="14dp"
+                android:paddingTop="0dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="0dp"
+                android:popupBackground="@drawable/quick_order_dropdown"
+                android:singleLine="true"
+                android:textColor="@color/widget_ink"
+                android:textColorHint="@color/widget_muted"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Solo aparecerán los clientes asociados a la empresa elegida."
+                android:textColor="@color/widget_muted"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="CLIENTE"
+                android:textColor="@color/mds_blue"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <AutoCompleteTextView
+                android:id="@+id/quick_order_client"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/quick_order_input"
+                android:completionThreshold="0"
+                android:dropDownHeight="280dp"
+                android:dropDownVerticalOffset="4dp"
+                android:hint="Primero selecciona una empresa"
+                android:inputType="textCapSentences"
+                android:paddingStart="14dp"
+                android:paddingTop="0dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="0dp"
+                android:popupBackground="@drawable/quick_order_dropdown"
+                android:singleLine="true"
+                android:textColor="@color/widget_ink"
+                android:textColorHint="@color/widget_muted"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/quick_order_preparer_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="ENCARGADO DE TRAMITAR"
+                android:textColor="@color/mds_blue"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/quick_order_preparer"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/quick_order_input"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="NOTAS"
+                android:textColor="@color/mds_blue"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/quick_order_notes"
+                android:layout_width="match_parent"
+                android:layout_height="112dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/quick_order_input"
+                android:gravity="top|start"
+                android:hint="Información necesaria para preparar el pedido"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLength="5000"
+                android:padding="14dp"
+                android:textColor="@color/widget_ink"
+                android:textColorHint="@color/widget_muted"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="ARCHIVO ADJUNTO"
+                android:textColor="@color/mds_blue"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Puedes añadir una foto, documento o audio."
+                android:textColor="@color/widget_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/quick_order_camera"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/quick_order_secondary_button"
+                    android:minHeight="0dp"
+                    android:text="Cámara"
+                    android:textAllCaps="false"
+                    android:textColor="@color/mds_blue"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/quick_order_file"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/quick_order_secondary_button"
+                    android:minHeight="0dp"
+                    android:text="Archivo"
+                    android:textAllCaps="false"
+                    android:textColor="@color/mds_blue"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/quick_order_audio"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/quick_order_secondary_button"
+                android:minHeight="0dp"
+                android:text="Grabar audio"
+                android:textAllCaps="false"
+                android:textColor="@color/mds_blue"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/quick_order_photo_preview"
+                android:layout_width="match_parent"
+                android:layout_height="170dp"
+                android:layout_marginTop="10dp"
+                android:adjustViewBounds="true"
+                android:background="@drawable/quick_order_input"
+                android:contentDescription="Vista previa de la foto del pedido"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/quick_order_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/quick_order_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/quick_order_status_background"
+                android:padding="12dp"
+                android:textColor="@color/widget_muted"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/quick_order_submit"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/quick_order_primary_button"
+                android:enabled="false"
+                android:minHeight="0dp"
+                android:text="Crear pedido"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

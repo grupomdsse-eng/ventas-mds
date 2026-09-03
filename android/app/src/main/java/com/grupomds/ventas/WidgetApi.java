@@ -86,6 +86,7 @@ final class WidgetApi {
         final String name;
         final String email;
         final String phone;
+        final String cif;
         final List<Integer> companyIds = new ArrayList<>();
 
         Client(JSONObject item) {
@@ -93,6 +94,7 @@ final class WidgetApi {
             name = item.optString("name", "Cliente");
             email = item.optString("email", "");
             phone = item.optString("phone", "");
+            cif = item.optString("cif", "");
             String rawCompanies = item.optString("company_ids", "");
             for (String value : rawCompanies.split(",")) {
                 try { if (!value.trim().isEmpty()) companyIds.add(Integer.parseInt(value.trim())); } catch (NumberFormatException ignored) { }
@@ -100,6 +102,15 @@ final class WidgetApi {
         }
 
         boolean belongsTo(int companyId) { return companyIds.contains(companyId); }
+
+        /* AutoCompleteTextView conserva el objeto elegido, pero este texto
+           también sirve de referencia inequívoca al buscar clientes con el
+           mismo nombre fiscal. */
+        @Override public String toString() {
+            if (!cif.trim().isEmpty()) return name + " · " + cif;
+            if (!phone.trim().isEmpty()) return name + " · " + phone;
+            return name;
+        }
     }
 
     static final class Company {
