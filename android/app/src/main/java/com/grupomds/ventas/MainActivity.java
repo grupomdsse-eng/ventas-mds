@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 
@@ -33,6 +34,9 @@ public class MainActivity extends BridgeActivity {
         // El WebView recibe exactamente los insets reales de cada móvil. Así la
         // cabecera no queda detrás de la hora/cámara y el chat evita la barra inferior.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        // Algunos WebView no reducen visualViewport al abrir el teclado. Se
+        // conserva el ajuste normal y se comunica además el inset real a JS.
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         getWindow().setStatusBarColor(Color.rgb(0, 116, 199));
         getWindow().setNavigationBarColor(Color.rgb(0, 91, 156));
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
@@ -43,6 +47,9 @@ public class MainActivity extends BridgeActivity {
         ViewCompat.setOnApplyWindowInsetsListener(content, (view, insets) -> {
             Insets safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             view.setPadding(0, safe.top, 0, safe.bottom);
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            int keyboardHeight = insets.isVisible(WindowInsetsCompat.Type.ime()) ? ime.bottom : 0;
+            publishKeyboardInset((WebView) view, keyboardHeight);
             return insets;
         });
         ViewCompat.requestApplyInsets(content);
@@ -83,6 +90,13 @@ public class MainActivity extends BridgeActivity {
     private void hideKeyboard(WebView webView) {
         InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
         if (manager != null) manager.hideSoftInputFromWindow(webView.getWindowToken(), 0);
+    }
+
+    /** Entrega el alto del teclado al sitio remoto sin depender de WebView. */
+    private void publishKeyboardInset(WebView webView, int height) {
+        String script = "window.__mdsNativeKeyboardHeight=" + Math.max(0, height)
+                + ";window.dispatchEvent(new CustomEvent('mdskeyboardinsets',{detail:{height:window.__mdsNativeKeyboardHeight}}));";
+        webView.post(() -> webView.evaluateJavascript(script, null));
     }
 
     /** Abre dentro del WebView la pantalla concreta solicitada por un widget. */
