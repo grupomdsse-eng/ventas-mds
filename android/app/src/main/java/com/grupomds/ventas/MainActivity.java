@@ -34,9 +34,10 @@ public class MainActivity extends BridgeActivity {
         // El WebView recibe exactamente los insets reales de cada móvil. Así la
         // cabecera no queda detrás de la hora/cámara y el chat evita la barra inferior.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        // Algunos WebView no reducen visualViewport al abrir el teclado. Se
-        // conserva el ajuste normal y se comunica además el inset real a JS.
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        // La web calcula la altura disponible con el inset IME que enviamos
+        // abajo. No dejamos que Android reduzca además el WebView: esa doble
+        // compensación era la causa del hueco excesivo sobre el teclado.
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         getWindow().setStatusBarColor(Color.rgb(0, 116, 199));
         getWindow().setNavigationBarColor(Color.rgb(0, 91, 156));
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
