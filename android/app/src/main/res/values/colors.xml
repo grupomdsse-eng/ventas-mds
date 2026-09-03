@@ -6,6 +6,7 @@
     <color name="mds_blue">#0074C7</color>
     <color name="mds_blue_dark">#005B9C</color>
     <color name="mds_orange">#FFB522</color>
+    <color name="widget_blue">#0074C7</color>
     <color name="widget_ink">#102D50</color>
     <color name="widget_muted">#52708D</color>
 </resources>

@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.media.MediaRecorder;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.ArrayAdapter;
@@ -45,6 +46,7 @@ public class QuickOrderActivity extends AppCompatActivity {
     private static final int CAMERA_REQUEST = 6101;
     private static final int FILE_REQUEST = 6102;
     private static final int CAMERA_PERMISSION_REQUEST = 6103;
+    private static final int AUDIO_PERMISSION_REQUEST = 6104;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final List<WidgetApi.Client> clients = new ArrayList<>();
     private final List<WidgetApi.Client> filteredClients = new ArrayList<>();
@@ -62,6 +64,9 @@ public class QuickOrderActivity extends AppCompatActivity {
     private int selectedClientId;
     private File attachment;
     private File cameraOutput;
+    private File audioOutput;
+    private MediaRecorder recorder;
+    private Button audioButton;
 
     @Override protected void onCreate(@Nullable Bundle state) {
         super.onCreate(state);
@@ -78,6 +83,8 @@ public class QuickOrderActivity extends AppCompatActivity {
         findViewById(R.id.quick_order_close).setOnClickListener(view -> finish());
         findViewById(R.id.quick_order_camera).setOnClickListener(view -> openCamera());
         findViewById(R.id.quick_order_file).setOnClickListener(view -> openFilePicker());
+        audioButton = findViewById(R.id.quick_order_audio);
+        audioButton.setOnClickListener(view -> toggleAudioRecording());
         submit.setOnClickListener(view -> submitOrder());
         clientInput.setOnItemClickListener((parent, view, position, id) -> {
             selectedClientId = filteredClients.get(position).id;
@@ -177,14 +184,47 @@ public class QuickOrderActivity extends AppCompatActivity {
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("image/*");
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "application/pdf", "audio/*"});
         startActivityForResult(intent, FILE_REQUEST);
     }
+
+    private void toggleAudioRecording() {
+        if (recorder != null) { stopAudioRecording(); return; }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, AUDIO_PERMISSION_REQUEST);
+            return;
+        }
+        startAudioRecording();
+    }
+
+    private void startAudioRecording() {
+        try {
+            audioOutput=File.createTempFile("pedido-audio-", ".m4a", getCacheDir());
+            recorder=new MediaRecorder();
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            recorder.setOutputFile(audioOutput.getAbsolutePath());
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            recorder.prepare(); recorder.start();
+            audioButton.setText("Detener grabación"); status.setText("Grabando audio… Pulsa Detener cuando termines.");
+        } catch (Exception error) { releaseRecorder(); Toast.makeText(this,"No se pudo iniciar la grabación.",Toast.LENGTH_SHORT).show(); }
+    }
+
+    private void stopAudioRecording() {
+        try { recorder.stop(); attachment=audioOutput; photoPreview.setVisibility(View.GONE); status.setText("Audio preparado para el pedido."); }
+        catch (RuntimeException error) { if(audioOutput!=null) audioOutput.delete(); Toast.makeText(this,"La grabación fue demasiado corta.",Toast.LENGTH_SHORT).show(); }
+        finally { releaseRecorder(); audioButton.setText("Grabar audio"); }
+    }
+
+    private void releaseRecorder() { if(recorder!=null){try{recorder.reset();}catch(Exception ignored){} recorder.release();recorder=null;} }
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
         if (requestCode == CAMERA_PERMISSION_REQUEST && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) launchCamera();
         else if (requestCode == CAMERA_PERMISSION_REQUEST) Toast.makeText(this, "Debes permitir el uso de la cámara.", Toast.LENGTH_SHORT).show();
+        if (requestCode == AUDIO_PERMISSION_REQUEST && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) startAudioRecording();
+        else if (requestCode == AUDIO_PERMISSION_REQUEST) Toast.makeText(this, "Debes permitir el uso del micrófono.", Toast.LENGTH_SHORT).show();
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -199,10 +239,10 @@ public class QuickOrderActivity extends AppCompatActivity {
         if (requestCode == FILE_REQUEST && data != null && data.getData() != null) {
             try {
                 attachment = copyToCache(data.getData());
-                photoPreview.setImageURI(Uri.fromFile(attachment));
-                photoPreview.setVisibility(View.VISIBLE);
-                status.setText("Imagen preparada para el pedido.");
-            } catch (IOException error) { Toast.makeText(this, "No se pudo leer la imagen seleccionada.", Toast.LENGTH_SHORT).show(); }
+                String type=getContentResolver().getType(data.getData());
+                if(type!=null&&type.startsWith("image/")){photoPreview.setImageURI(Uri.fromFile(attachment));photoPreview.setVisibility(View.VISIBLE);status.setText("Imagen preparada para el pedido.");}
+                else {photoPreview.setVisibility(View.GONE);status.setText(type!=null&&type.startsWith("audio/")?"Audio preparado para el pedido.":"Documento preparado para el pedido.");}
+            } catch (IOException error) { Toast.makeText(this, "No se pudo leer el archivo seleccionado.", Toast.LENGTH_SHORT).show(); }
         }
     }
 
@@ -276,5 +316,5 @@ public class QuickOrderActivity extends AppCompatActivity {
         });
     }
 
-    @Override protected void onDestroy() { executor.shutdownNow(); super.onDestroy(); }
+    @Override protected void onDestroy() { releaseRecorder(); executor.shutdownNow(); super.onDestroy(); }
 }

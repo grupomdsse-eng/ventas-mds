@@ -1,9 +1,7 @@
 package com.grupomds.ventas;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
@@ -38,11 +36,8 @@ public class PendingOrdersWidgetService extends RemoteViewsService {
             row.setTextViewText(R.id.widget_pending_item_ref, order.reference);
             row.setTextViewText(R.id.widget_pending_item_client, order.clientName);
             row.setTextViewText(R.id.widget_pending_item_meta, order.preparerName);
-            Intent open = new Intent(context, MainActivity.class)
-                    .putExtra(MainActivity.EXTRA_WIDGET_URL, WidgetApi.BASE_URL + "/index.php?page=orders&order=" + order.id)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-            row.setOnClickPendingIntent(R.id.widget_pending_item_root, PendingIntent.getActivity(context, 7000 + order.id, open, flags));
+            Intent open = new Intent().putExtra(MainActivity.EXTRA_WIDGET_URL, WidgetApi.BASE_URL + "/index.php?page=orders&order=" + order.id);
+            row.setOnClickFillInIntent(R.id.widget_pending_item_root, open);
             return row;
         }
 

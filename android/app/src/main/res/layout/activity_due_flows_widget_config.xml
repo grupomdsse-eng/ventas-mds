@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:padding="20dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Configurar flujos próximos"
+            android:textColor="@color/widget_ink"
+            android:textSize="23sp"
+            android:textStyle="bold" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="7dp"
+            android:text="Mostrará todas las tareas que vencen hoy y mañana. Elige el tablón y las columnas que quieres consultar."
+            android:textColor="@color/widget_muted"
+            android:textSize="14sp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="Tablón"
+            android:textColor="@color/widget_ink"
+            android:textStyle="bold" />
+        <Spinner
+            android:id="@+id/due_widget_pipeline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Columnas"
+            android:textColor="@color/widget_ink"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/due_widget_stages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Todas las columnas" />
+        <TextView
+            android:id="@+id/due_widget_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/widget_muted" />
+        <Button
+            android:id="@+id/due_widget_save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:backgroundTint="@color/widget_blue"
+            android:text="Guardar widget"
+            android:textColor="#FFFFFFFF" />
+    </LinearLayout>
+</ScrollView>

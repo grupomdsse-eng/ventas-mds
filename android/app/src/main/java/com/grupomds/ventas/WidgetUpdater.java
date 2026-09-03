@@ -21,8 +21,10 @@ import android.widget.RemoteViews;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,13 +34,11 @@ final class WidgetUpdater {
     static final String CHAT_ID = "chat_contact_id_";
     static final String CHAT_NAME = "chat_contact_name_";
     static final String CHAT_AVATAR = "chat_contact_avatar_";
+    static final String DUE_PIPELINE = "due_pipeline_";
+    static final String DUE_STAGES = "due_stages_";
     static final String ACTION_REFRESH_DUE = "com.grupomds.ventas.REFRESH_DUE_WIDGET";
     static final String ACTION_REFRESH_PENDING = "com.grupomds.ventas.REFRESH_PENDING_ORDERS_WIDGET";
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
-    private static final int[] FLOW_CARDS = {R.id.widget_flow_card_1, R.id.widget_flow_card_2, R.id.widget_flow_card_3, R.id.widget_flow_card_4, R.id.widget_flow_card_5, R.id.widget_flow_card_6};
-    private static final int[] FLOW_LABELS = {R.id.widget_flow_label_1, R.id.widget_flow_label_2, R.id.widget_flow_label_3, R.id.widget_flow_label_4, R.id.widget_flow_label_5, R.id.widget_flow_label_6};
-    private static final int[] FLOW_TITLES = {R.id.widget_flow_title_1, R.id.widget_flow_title_2, R.id.widget_flow_title_3, R.id.widget_flow_title_4, R.id.widget_flow_title_5, R.id.widget_flow_title_6};
-    private static final int[] FLOW_META = {R.id.widget_flow_meta_1, R.id.widget_flow_meta_2, R.id.widget_flow_meta_3, R.id.widget_flow_meta_4, R.id.widget_flow_meta_5, R.id.widget_flow_meta_6};
 
     private WidgetUpdater() { }
 
@@ -56,40 +56,47 @@ final class WidgetUpdater {
     }
 
     static void updateDueWidgets(Context context, AppWidgetManager manager, int[] ids) {
-        for (int id : ids) manager.updateAppWidget(id, dueViews(context, null, "Actualizando…"));
+        for (int id : ids) manager.updateAppWidget(id, dueViews(context, id, null, "Actualizando…", duePipeline(context,id)));
         EXECUTOR.execute(() -> {
-            try {
-                List<WidgetApi.Flow> flows = WidgetApi.loadDueFlows();
-                for (int id : ids) manager.updateAppWidget(id, dueViews(context, flows, ""));
-            } catch (Exception error) {
-                for (int id : ids) manager.updateAppWidget(id, dueViews(context, null, "Abre MDS Ventas e inicia sesión."));
+            for (int id : ids) {
+                int pipeline=duePipeline(context,id);
+                try {
+                    List<WidgetApi.Flow> flows=WidgetApi.loadDueFlows(pipeline,dueStages(context,id));
+                    manager.updateAppWidget(id,dueViews(context,id,flows,"",pipeline));
+                } catch (Exception error) {
+                    manager.updateAppWidget(id,dueViews(context,id,null,"Abre MDS Ventas e inicia sesión.",pipeline));
+                }
             }
+            manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_due_list);
         });
     }
 
-    private static RemoteViews dueViews(Context context, List<WidgetApi.Flow> flows, String message) {
+    static int duePipeline(Context context,int id){return context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getInt(DUE_PIPELINE+id,0);}
+    static Set<Integer> dueStages(Context context,int id){Set<Integer> values=new HashSet<>();String raw=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString(DUE_STAGES+id,"");for(String item:raw.split(",")){try{if(!item.trim().isEmpty())values.add(Integer.parseInt(item.trim()));}catch(NumberFormatException ignored){}}return values;}
+    static void saveDueConfig(Context context,int id,int pipeline,Set<Integer> stages){StringBuilder raw=new StringBuilder();for(Integer stage:stages){if(stage==null||stage<=0)continue;if(raw.length()>0)raw.append(',');raw.append(stage);}context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putInt(DUE_PIPELINE+id,pipeline).putString(DUE_STAGES+id,raw.toString()).apply();}
+    static void clearDueConfig(Context context,int id){context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().remove(DUE_PIPELINE+id).remove(DUE_STAGES+id).apply();}
+
+    private static RemoteViews dueViews(Context context, int widgetId, List<WidgetApi.Flow> flows, String message, int pipeline) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_due_flows);
-        views.setOnClickPendingIntent(R.id.widget_due_root, appPendingIntent(context, WidgetApi.BASE_URL + "/index.php?page=pipeline", 101));
+        String route=WidgetApi.BASE_URL + "/index.php?page=pipeline"+(pipeline>0?"&pipeline="+pipeline:"");
+        views.setOnClickPendingIntent(R.id.widget_due_root, appPendingIntent(context, route, 101+pipeline));
         Intent refresh = new Intent(context, DueFlowsWidgetProvider.class).setAction(ACTION_REFRESH_DUE);
         views.setOnClickPendingIntent(R.id.widget_due_refresh, broadcastPendingIntent(context, refresh, 102));
+        Intent adapter = new Intent(context, DueFlowsWidgetService.class);
+        adapter.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
+        adapter.setData(Uri.parse(adapter.toUri(Intent.URI_INTENT_SCHEME)));
+        views.setRemoteAdapter(R.id.widget_due_list, adapter);
+        Intent template = new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        views.setPendingIntentTemplate(R.id.widget_due_list, PendingIntent.getActivity(context, 6000 + widgetId, template, flags()));
+        views.setEmptyView(R.id.widget_due_list, R.id.widget_due_empty);
         boolean ready = flows != null;
-        views.setViewVisibility(R.id.widget_due_empty, !ready || flows.isEmpty() ? View.VISIBLE : View.GONE);
+        views.setViewVisibility(R.id.widget_due_empty, View.GONE);
         views.setTextViewText(R.id.widget_due_empty, message.isEmpty() ? "No hay flujos que venzan hoy ni mañana." : message);
         views.setTextViewText(R.id.widget_due_count, ready ? flows.size() + " próximos" : "Consultando");
-        for (int index = 0; index < FLOW_CARDS.length; index++) {
-            if (ready && index < flows.size()) {
-                WidgetApi.Flow flow = flows.get(index);
-                views.setViewVisibility(FLOW_CARDS[index], View.VISIBLE);
-                views.setTextViewText(FLOW_LABELS[index], flow.stageName.toUpperCase(Locale.ROOT));
-                views.setTextViewText(FLOW_TITLES[index], flow.title);
-                views.setTextViewText(FLOW_META[index], dueLabel(flow) + " · " + flow.clientName);
-                views.setInt(FLOW_LABELS[index], "setBackgroundColor", flowColor(flow));
-            } else views.setViewVisibility(FLOW_CARDS[index], View.GONE);
-        }
         return views;
     }
 
-    private static String dueLabel(WidgetApi.Flow flow) {
+    static String dueLabel(WidgetApi.Flow flow) {
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
         Calendar tomorrow = Calendar.getInstance(); tomorrow.add(Calendar.DAY_OF_YEAR, 1);
         String next = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(tomorrow.getTime());
@@ -97,7 +104,7 @@ final class WidgetUpdater {
         return flow.dueTime.isEmpty() ? day : day + " " + flow.dueTime;
     }
 
-    private static int flowColor(WidgetApi.Flow flow) {
+    static int flowColor(WidgetApi.Flow flow) {
         try { if (flow.color.matches("#[0-9a-fA-F]{6}")) return Color.parseColor(flow.color); } catch (Exception ignored) { }
         if ("violet".equals(flow.stageColor)) return Color.rgb(132, 94, 247);
         if ("amber".equals(flow.stageColor)) return Color.rgb(255, 181, 34);
@@ -193,6 +200,8 @@ final class WidgetUpdater {
         adapter.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
         adapter.setData(Uri.parse(adapter.toUri(Intent.URI_INTENT_SCHEME)));
         views.setRemoteAdapter(R.id.widget_pending_list, adapter);
+        Intent template = new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        views.setPendingIntentTemplate(R.id.widget_pending_list, PendingIntent.getActivity(context, 5000 + widgetId, template, flags()));
         views.setEmptyView(R.id.widget_pending_list, R.id.widget_pending_empty);
         boolean ready = orders != null;
         views.setViewVisibility(R.id.widget_pending_empty, View.GONE);

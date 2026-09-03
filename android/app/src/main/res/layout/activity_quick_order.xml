@@ -101,7 +101,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:text="Foto"
+            android:text="Foto, documento o audio"
             android:textColor="@color/widget_ink"
             android:textStyle="bold" />
         <LinearLayout
@@ -122,8 +122,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="Elegir imagen" />
+                android:text="Subir archivo" />
         </LinearLayout>
+        <Button
+            android:id="@+id/quick_order_audio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Grabar audio" />
         <ImageView
             android:id="@+id/quick_order_photo_preview"
             android:layout_width="match_parent"

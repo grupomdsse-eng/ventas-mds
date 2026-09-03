@@ -49,6 +49,24 @@ final class WidgetApi {
         }
     }
 
+    static final class Stage {
+        final int id;
+        final String name;
+        Stage(JSONObject item) { id=item.optInt("id"); name=item.optString("name", "Columna"); }
+    }
+
+    static final class Board {
+        final int id;
+        final String name;
+        final List<Stage> stages=new ArrayList<>();
+        Board(JSONObject item) {
+            id=item.optInt("id"); name=item.optString("name", "Tablón");
+            JSONArray items=item.optJSONArray("stages");
+            if(items!=null)for(int index=0;index<items.length();index++)stages.add(new Stage(items.optJSONObject(index)));
+        }
+        @Override public String toString() { return name; }
+    }
+
     static final class Contact {
         final int id;
         final String name;
@@ -190,11 +208,23 @@ final class WidgetApi {
         return new JSONObject(body);
     }
 
-    static List<Flow> loadDueFlows() throws Exception {
-        JSONArray source = getJson("widget_due_flows").optJSONArray("items");
+    static List<Flow> loadDueFlows() throws Exception { return loadDueFlows(0, new java.util.HashSet<>()); }
+
+    static List<Flow> loadDueFlows(int pipelineId, java.util.Set<Integer> stageIds) throws Exception {
+        StringBuilder query=new StringBuilder("widget_due_flows");
+        if(pipelineId>0)query.append("&pipeline_id=").append(pipelineId);
+        if(stageIds!=null&&!stageIds.isEmpty()){query.append("&stage_ids=");boolean first=true;for(Integer id:stageIds){if(id==null||id<=0)continue;if(!first)query.append(',');query.append(id);first=false;}}
+        JSONArray source = getJson(query.toString()).optJSONArray("items");
         List<Flow> flows = new ArrayList<>();
         if (source != null) for (int i = 0; i < source.length(); i++) flows.add(new Flow(source.getJSONObject(i)));
         return flows;
+    }
+
+    static List<Board> loadDueOptions() throws Exception {
+        JSONArray source=getJson("widget_due_flow_options").optJSONArray("pipelines");
+        List<Board> boards=new ArrayList<>();
+        if(source!=null)for(int index=0;index<source.length();index++){JSONObject item=source.optJSONObject(index);if(item!=null)boards.add(new Board(item));}
+        return boards;
     }
 
     static List<Contact> loadContacts() throws Exception {
@@ -295,5 +325,12 @@ final class WidgetApi {
         JSONObject response = new JSONObject(body);
         if (!response.optBoolean("ok")) throw new IOException(response.optString("error", "No se pudo crear el pedido."));
         return new OrderResult(response);
+    }
+
+    static boolean quickReply(int recipientId, int groupId, String body, String clientMessageId) throws Exception {
+        HttpURLConnection connection=open("native_quick_reply", "POST");connection.setDoOutput(true);connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");connection.setRequestProperty("X-MDS-Native-Reply", "1");
+        String payload="recipient_id="+java.net.URLEncoder.encode(String.valueOf(recipientId),"UTF-8")+"&group_id="+java.net.URLEncoder.encode(String.valueOf(groupId),"UTF-8")+"&body="+java.net.URLEncoder.encode(body==null?"":body,"UTF-8")+"&client_message_id="+java.net.URLEncoder.encode(clientMessageId,"UTF-8");
+        try(java.io.OutputStream stream=connection.getOutputStream()){stream.write(payload.getBytes(StandardCharsets.UTF_8));}
+        int code=connection.getResponseCode();saveCookies(connection);String value=read(code>=400?connection.getErrorStream():connection.getInputStream());connection.disconnect();if(code>=300||value.trim().startsWith("<"))throw new IOException("No se pudo enviar la respuesta.");return new JSONObject(value).optBoolean("ok");
     }
 }

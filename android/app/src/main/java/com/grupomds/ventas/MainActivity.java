@@ -10,6 +10,9 @@ import android.view.MotionEvent;
 import android.webkit.WebView;
 
 import androidx.core.view.WindowCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.app.ActivityCompat;
 import com.getcapacitor.BridgeActivity;
@@ -23,14 +26,22 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Mantiene el WebView dentro de las barras del sistema: evita que el
-        // contenido remoto quede oculto tras la cámara, la hora o la barra inferior.
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+        // El WebView recibe exactamente los insets reales de cada móvil. Así la
+        // cabecera no queda detrás de la hora/cámara y el chat evita la barra inferior.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.rgb(0, 116, 199));
         getWindow().setNavigationBarColor(Color.rgb(0, 91, 156));
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         bars.setAppearanceLightStatusBars(false);
         bars.setAppearanceLightNavigationBars(false);
+
+        WebView content = getBridge().getWebView();
+        ViewCompat.setOnApplyWindowInsetsListener(content, (view, insets) -> {
+            Insets safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            view.setPadding(0, safe.top, 0, safe.bottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(content);
 
         configureEdgeNavigation();
         requestNotificationPermission();

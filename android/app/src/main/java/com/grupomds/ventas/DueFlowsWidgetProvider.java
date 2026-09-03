@@ -18,4 +18,9 @@ public class DueFlowsWidgetProvider extends AppWidgetProvider {
             WidgetUpdater.updateDueWidgets(context, manager, ids);
         }
     }
+
+    @Override public void onDeleted(Context context, int[] ids) {
+        for (int id : ids) WidgetUpdater.clearDueConfig(context, id);
+        super.onDeleted(context, ids);
+    }
 }
