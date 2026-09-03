@@ -244,7 +244,10 @@ final class WidgetApi {
     }
 
     static Bitmap loadAvatar(String path) throws IOException {
-        if (path == null || !path.matches("uploads/avatars/[A-Za-z0-9._-]+")) return null;
+        // Avatars are deliberately served through the authenticated media endpoint.
+        // Do not accept arbitrary URLs here: widgets share the user's WebView
+        // session cookie, but must never become an open downloader.
+        if (path == null || !path.matches("index\\.php\\?page=media_file&type=avatar&id=[1-9][0-9]*")) return null;
         HttpURLConnection connection = (HttpURLConnection) new URL(BASE_URL + "/" + path).openConnection();
         connection.setConnectTimeout(TIMEOUT_MS); connection.setReadTimeout(TIMEOUT_MS); connection.setInstanceFollowRedirects(false);
         String cookies = CookieManager.getInstance().getCookie(BASE_URL);

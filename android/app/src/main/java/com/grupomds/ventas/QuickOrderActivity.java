@@ -1,8 +1,10 @@
 package com.grupomds.ventas;
 
 import android.Manifest;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,6 +14,7 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.media.MediaRecorder;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView;
@@ -30,6 +33,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -71,7 +78,19 @@ public class QuickOrderActivity extends AppCompatActivity {
 
     @Override protected void onCreate(@Nullable Bundle state) {
         super.onCreate(state);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         setContentView(R.layout.activity_quick_order);
+        View root = findViewById(android.R.id.content);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()
+                    | WindowInsetsCompat.Type.displayCutout());
+            // Esta pantalla es nativa: el padding evita que su cabecera o el
+            // botón de crear pedido queden detrás de barras del sistema.
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
         companyInput = findViewById(R.id.quick_order_company);
         clientInput = findViewById(R.id.quick_order_client);
         preparerInput = findViewById(R.id.quick_order_preparer);
@@ -184,9 +203,21 @@ public class QuickOrderActivity extends AppCompatActivity {
             Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", cameraOutput);
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+            intent.setClipData(ClipData.newRawUri("MDS Ventas", uri));
             intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            List<ResolveInfo> handlers = getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+            if (handlers.isEmpty()) {
+                Toast.makeText(this, "No hay una aplicación de cámara disponible.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            for (ResolveInfo handler : handlers) {
+                grantUriPermission(handler.activityInfo.packageName, uri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
             startActivityForResult(intent, CAMERA_REQUEST);
-        } catch (IOException error) { Toast.makeText(this, "No se pudo preparar la cámara.", Toast.LENGTH_SHORT).show(); }
+        } catch (IOException | SecurityException error) {
+            Toast.makeText(this, "No se pudo preparar la cámara.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void openFilePicker() {
@@ -237,6 +268,13 @@ public class QuickOrderActivity extends AppCompatActivity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CAMERA_REQUEST && cameraOutput != null) {
+            // Se revoca el acceso concedido a la cámara externa al regresar.
+            try {
+                Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", cameraOutput);
+                revokeUriPermission(uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (Exception ignored) { }
+        }
         if (resultCode != RESULT_OK) return;
         if (requestCode == CAMERA_REQUEST && cameraOutput != null && cameraOutput.length() > 0) {
             attachment = cameraOutput;

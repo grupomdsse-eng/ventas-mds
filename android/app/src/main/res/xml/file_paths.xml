@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <!-- Solo se comparte una foto temporal privada con la app Cámara. No se
+         concede acceso a todo el almacenamiento externo del dispositivo. -->
+    <cache-path name="camera_cache" path="camera/" />
+    <cache-path name="temporary_uploads" path="." />
+    <!-- Compatibilidad limitada para el plugin Camera de Capacitor si una
+         instalación antigua aún lo invoca: solo Pictures privado de la app. -->
+    <external-files-path name="app_camera_pictures" path="Pictures/" />
 </paths>
