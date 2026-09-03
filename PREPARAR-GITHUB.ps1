@@ -2,7 +2,7 @@
 # No incluye dependencias, claves, APKs ni instaladores generados.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-v12-GitHub.zip'
+$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-v14-GitHub.zip'
 $temporary = Join-Path ([System.IO.Path]::GetTempPath()) ('mds-ventas-github-' + [guid]::NewGuid().ToString('N'))
 
 function New-PortableZip([string]$source,[string]$target) {
@@ -34,6 +34,13 @@ try {
     ) | Where-Object { Test-Path -LiteralPath $_ } | ForEach-Object {
         Remove-Item -LiteralPath $_ -Force -Recurse
     }
+
+    # El ZIP se puede subir a GitHub sin exponer credenciales de Firebase,
+    # llaves de firma ni ficheros .env que puedan existir en el equipo local.
+    Get-ChildItem -LiteralPath $temporary -File -Recurse | Where-Object {
+        $_.Name -eq 'google-services.json' -or $_.Name -like '.env*' -or
+        $_.Extension -in @('.jks', '.keystore', '.p12', '.pfx', '.pem')
+    } | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
 
     if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Force }
     New-PortableZip $temporary $destination

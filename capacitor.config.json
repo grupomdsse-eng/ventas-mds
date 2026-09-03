@@ -7,6 +7,7 @@
     "allowNavigation": ["ventasmds.matriculadosdelsur.com"]
   },
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "adjustMarginsForEdgeToEdge": "disable"
   }
 }

@@ -1,8 +1,8 @@
 # Publicar las aplicaciones de MDS Ventas desde GitHub
 
-1. En PowerShell, dentro de esta carpeta, ejecuta `powershell -ExecutionPolicy Bypass -File .\PREPARAR-GITHUB.ps1`. Se creará `MDS-Ventas-Native-v6-GitHub.zip` en la carpeta padre.
+1. En PowerShell, dentro de esta carpeta, ejecuta `powershell -ExecutionPolicy Bypass -File .\PREPARAR-GITHUB.ps1`. Se creará `MDS-Ventas-Native-v14-GitHub.zip` en la carpeta padre.
 2. En GitHub crea un repositorio **privado**, por ejemplo `mds-ventas-instaladores`.
-3. Descomprime el ZIP y sube su contenido a la raíz del repositorio. No subas `node_modules`, `dist`, APKs, EXEs, `android/local.properties` ni `google-services.json`.
+3. Descomprime el ZIP y sube su contenido a la raíz del repositorio. No subas `node_modules`, `dist`, APKs, EXEs, `android/local.properties`, archivos `.env`, llaves de firma ni `google-services.json`.
 4. Confirma la subida a la rama `main`.
 5. Abre la pestaña **Actions**. Autoriza los flujos si GitHub lo solicita.
 6. Ejecuta **Generar instalador Windows** para obtener `MDS Ventas Setup.exe` o **Generar APK Android** para obtener `app-debug.apk`.
@@ -16,3 +16,7 @@
 ## Notificaciones en segundo plano
 
 Los avisos mientras la aplicación está abierta se incluyen en la web actualizada. Para recibirlos con Android cerrado se necesita configurar Firebase Cloud Messaging siguiendo `docs/NOTIFICACIONES.md`. No incluyas credenciales de Firebase en el repositorio.
+
+La versión 2.3.3 reserva de forma nativa las barras del sistema y el teclado,
+abre la cámara directamente y protege la pantalla frente a capturas y
+grabaciones. Instala la nueva APK sobre la anterior para conservar la sesión.

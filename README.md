@@ -28,8 +28,19 @@ El APK de la acción está firmado con la clave de depuración de GitHub, válid
 3. Abre la carpeta `android` con Android Studio.
 4. Usa **Build > Generate Signed Bundle / APK > APK** para crear el instalador de producción.
 
-El manifiesto Android permite cargar exclusivamente el dominio HTTPS de MDS Ventas. La cámara y el selector de archivos se abren desde los controles de adjuntos de la aplicación web.
+El manifiesto Android permite cargar exclusivamente el dominio HTTPS de MDS Ventas. La cámara se abre mediante el plugin nativo `MdsCamera` (directamente en la cámara del dispositivo) y los adjuntos se conservan en almacenamiento temporal privado hasta enviarse.
 
 ## Notificaciones
 
 La web/PWA y el instalador de Windows solicitan permiso y muestran avisos de mensajes y pedidos mientras se están ejecutando. En Android, las notificaciones de chat se agrupan por conversación y permiten responder directamente. Para recibirlas con la APK cerrada hay que completar Firebase Cloud Messaging; consulta [docs/NOTIFICACIONES.md](docs/NOTIFICACIONES.md).
+
+## Privacidad y seguridad
+
+- Android reserva físicamente la barra de estado, navegación y teclado para
+  que ningún control quede oculto.
+- La pantalla Android no admite capturas, grabación ni miniaturas recientes;
+  así se evita exponer conversaciones, pedidos o archivos.
+- Las copias de seguridad automáticas de Android están desactivadas y la app
+  solo permite HTTPS. El paquete GitHub excluye secretos, claves y Firebase.
+- El instalador Windows usa aislamiento de contexto, sandbox, HTTPS y permisos
+  únicamente para notificaciones y cámara/micrófono desde el dominio MDS.
