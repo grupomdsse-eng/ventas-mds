@@ -1,6 +1,6 @@
 {
   "name": "mds-ventas-native",
-  "version": "1.7.1",
+  "version": "2.0.0",
   "private": true,
   "author": "Grupo MDS",
   "description": "Aplicaciones instalables de MDS Ventas para Windows y Android.",
