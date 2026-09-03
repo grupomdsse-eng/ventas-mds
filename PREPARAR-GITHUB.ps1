@@ -2,8 +2,20 @@
 # No incluye dependencias, claves, APKs ni instaladores generados.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-v10-GitHub.zip'
+$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-v11-GitHub.zip'
 $temporary = Join-Path ([System.IO.Path]::GetTempPath()) ('mds-ventas-github-' + [guid]::NewGuid().ToString('N'))
+
+function New-PortableZip([string]$source,[string]$target) {
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive = [System.IO.Compression.ZipFile]::Open($target,[System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        Get-ChildItem -LiteralPath $source -File -Recurse | ForEach-Object {
+            $relative = $_.FullName.Substring($source.Length).TrimStart('\','/').Replace('\','/')
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,$_.FullName,$relative,[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    } finally { $archive.Dispose() }
+}
 
 New-Item -ItemType Directory -Path $temporary | Out-Null
 try {
@@ -24,7 +36,7 @@ try {
     }
 
     if (Test-Path -LiteralPath $destination) { Remove-Item -LiteralPath $destination -Force }
-    Compress-Archive -Path (Join-Path $temporary '*') -DestinationPath $destination -CompressionLevel Optimal
+    New-PortableZip $temporary $destination
     Write-Host "Paquete limpio creado: $destination" -ForegroundColor Green
 }
 finally {
