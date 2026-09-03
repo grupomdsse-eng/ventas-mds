@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 
 import androidx.core.view.WindowCompat;
@@ -24,6 +25,9 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Debe registrarse antes de crear el Bridge para que esté disponible
+        // como window.Capacitor.Plugins.MdsAudio desde el chat.
+        registerPlugin(MdsAudioPlugin.class);
         super.onCreate(savedInstanceState);
 
         // El WebView recibe exactamente los insets reales de cada móvil. Así la
@@ -59,6 +63,26 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         openWidgetRoute(intent);
+    }
+
+    @Override
+    public void onBackPressed() {
+        WebView webView = getBridge().getWebView();
+        if (isKeyboardVisible(webView)) {
+            hideKeyboard(webView);
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    private boolean isKeyboardVisible(WebView webView) {
+        WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(webView);
+        return insets != null && insets.isVisible(WindowInsetsCompat.Type.ime());
+    }
+
+    private void hideKeyboard(WebView webView) {
+        InputMethodManager manager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (manager != null) manager.hideSoftInputFromWindow(webView.getWindowToken(), 0);
     }
 
     /** Abre dentro del WebView la pantalla concreta solicitada por un widget. */
@@ -108,11 +132,21 @@ public class MainActivity extends BridgeActivity {
             if (!horizontalSwipe) {
                 return false;
             }
-            if (swipeStartX <= edgeWidth && deltaX > 0 && webView.canGoBack()) {
+            if (swipeStartX <= edgeWidth && deltaX > 0) {
+                if (isKeyboardVisible(webView)) {
+                    hideKeyboard(webView);
+                    return true;
+                }
+                if (!webView.canGoBack()) return false;
                 webView.goBack();
                 return true;
             }
-            if (swipeStartX >= view.getWidth() - edgeWidth && deltaX < 0 && webView.canGoForward()) {
+            if (swipeStartX >= view.getWidth() - edgeWidth && deltaX < 0) {
+                if (isKeyboardVisible(webView)) {
+                    hideKeyboard(webView);
+                    return true;
+                }
+                if (!webView.canGoForward()) return false;
                 webView.goForward();
                 return true;
             }
