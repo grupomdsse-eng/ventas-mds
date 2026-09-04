@@ -86,9 +86,10 @@ public class QuickOrderActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
+            Insets keyboard = insets.getInsets(WindowInsetsCompat.Type.ime());
             // Esta pantalla es nativa: el padding evita que su cabecera o el
             // botón de crear pedido queden detrás de barras del sistema.
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            view.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, keyboard.bottom));
             return insets;
         });
         ViewCompat.requestApplyInsets(root);
@@ -110,7 +111,8 @@ public class QuickOrderActivity extends AppCompatActivity {
         audioButton = findViewById(R.id.quick_order_audio);
         audioButton.setOnClickListener(view -> toggleAudioRecording());
         submit.setOnClickListener(view -> submitOrder());
-        companyInput.setOnClickListener(view -> { if (companyInput.isEnabled()) companyInput.showDropDown(); });
+        companyInput.setOnClickListener(view -> { if (companyInput.isEnabled()) companyInput.post(companyInput::showDropDown); });
+        companyInput.setOnFocusChangeListener((view, focused) -> { if (focused && companyInput.isEnabled()) companyInput.post(companyInput::showDropDown); });
         companyInput.setOnItemClickListener((parent, view, position, id) -> {
             Object selected = parent.getItemAtPosition(position);
             if (selected instanceof WidgetApi.Company) {
@@ -124,7 +126,8 @@ public class QuickOrderActivity extends AppCompatActivity {
                         : "Empresa " + company.name + " seleccionada. Ahora elige el cliente.");
             }
         });
-        clientInput.setOnClickListener(view -> { if (clientInput.isEnabled()) clientInput.showDropDown(); });
+        clientInput.setOnClickListener(view -> { if (clientInput.isEnabled()) clientInput.post(clientInput::showDropDown); });
+        clientInput.setOnFocusChangeListener((view, focused) -> { if (focused && clientInput.isEnabled()) clientInput.post(clientInput::showDropDown); });
         clientInput.setOnItemClickListener((parent, view, position, id) -> {
             Object selected = parent.getItemAtPosition(position);
             selectedClientId = selected instanceof WidgetApi.Client ? ((WidgetApi.Client) selected).id : 0;

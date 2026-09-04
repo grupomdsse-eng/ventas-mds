@@ -77,6 +77,16 @@
         </receiver>
 
         <receiver
+            android:name=".QuickFlowWidgetProvider"
+            android:exported="false"
+            android:label="Flujo rápido · MDS Ventas">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_flow_widget_info" />
+        </receiver>
+
+        <receiver
             android:name=".PendingOrdersWidgetProvider"
             android:exported="false"
             android:label="Pedidos pendientes · MDS Ventas">
