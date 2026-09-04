@@ -2,7 +2,7 @@
 # No incluye dependencias, claves, APKs ni instaladores generados.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-v15-GitHub.zip'
+$destination = Join-Path (Split-Path -Parent $root) 'MDS-Ventas-Native-v16-GitHub.zip'
 $temporary = Join-Path ([System.IO.Path]::GetTempPath()) ('mds-ventas-github-' + [guid]::NewGuid().ToString('N'))
 
 function New-PortableZip([string]$source,[string]$target) {
