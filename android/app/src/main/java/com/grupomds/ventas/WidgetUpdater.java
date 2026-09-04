@@ -165,7 +165,11 @@ final class WidgetUpdater {
     static void updateQuickOrderWidgets(Context context, AppWidgetManager manager, int[] ids) {
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_quick_order);
-            views.setOnClickPendingIntent(R.id.widget_order_root, activityPendingIntent(context, new Intent(context, QuickOrderActivity.class), 300 + id));
+            // El formulario del sitio conoce siempre la sesión, empresas y clientes
+            // vigentes. El widget solo abre esa pantalla para no duplicar lógica ni
+            // quedar bloqueado por un selector nativo desactualizado.
+            String route = WidgetApi.BASE_URL + "/index.php?page=orders&new=1";
+            views.setOnClickPendingIntent(R.id.widget_order_root, appPendingIntent(context, route, 300 + id));
             manager.updateAppWidget(id, views);
         }
     }
@@ -219,11 +223,6 @@ final class WidgetUpdater {
     private static PendingIntent appPendingIntent(Context context, String url, int requestCode) {
         Intent launch = new Intent(context, MainActivity.class).putExtra(MainActivity.EXTRA_WIDGET_URL, url).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         return PendingIntent.getActivity(context, requestCode, launch, flags());
-    }
-
-    private static PendingIntent activityPendingIntent(Context context, Intent intent, int requestCode) {
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        return PendingIntent.getActivity(context, requestCode, intent, flags());
     }
 
     private static PendingIntent broadcastPendingIntent(Context context, Intent intent, int requestCode) { return PendingIntent.getBroadcast(context, requestCode, intent, flags()); }
