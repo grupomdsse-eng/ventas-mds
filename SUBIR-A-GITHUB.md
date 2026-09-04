@@ -1,6 +1,6 @@
 # Publicar las aplicaciones de MDS Ventas desde GitHub
 
-1. En PowerShell, dentro de esta carpeta, ejecuta `powershell -ExecutionPolicy Bypass -File .\PREPARAR-GITHUB.ps1`. Se creará `MDS-Ventas-Native-v16-GitHub.zip` en la carpeta padre.
+1. En PowerShell, dentro de esta carpeta, ejecuta `powershell -ExecutionPolicy Bypass -File .\PREPARAR-GITHUB.ps1`. Se creará `MDS-Ventas-Native-v17-GitHub.zip` en la carpeta padre.
 2. En GitHub crea un repositorio **privado**, por ejemplo `mds-ventas-instaladores`.
 3. Descomprime el ZIP y sube su contenido a la raíz del repositorio. No subas `node_modules`, `dist`, APKs, EXEs, `android/local.properties`, archivos `.env`, llaves de firma ni `google-services.json`.
 4. Confirma la subida a la rama `main`.
@@ -17,6 +17,7 @@
 
 Los avisos mientras la aplicación está abierta se incluyen en la web actualizada. Para recibirlos con Android cerrado se necesita configurar Firebase Cloud Messaging siguiendo `docs/NOTIFICACIONES.md`. No incluyas credenciales de Firebase en el repositorio.
 
-La versión 2.3.5 corrige los márgenes del pedido rápido con teclado, refuerza
-el desplegable de empresa y añade el widget azul **Nuevo flujo**. Instala la
-nueva APK sobre la anterior para conservar la sesión.
+La versión 2.3.6 sincroniza de forma segura la sesión de la WebView con el
+formulario nativo de pedido rápido. Así el selector de empresa carga las mismas
+empresas que la aplicación y muestra un error recuperable si la sesión caduca.
+Instala la nueva APK sobre la anterior para conservar la sesión.
