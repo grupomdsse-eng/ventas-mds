@@ -80,6 +80,9 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                // Guarda la sesión de la WebView antes de que un widget nativo
+                // consulte empresas, clientes o pedidos en segundo plano.
+                WidgetApi.syncSessionFromWebView();
                 // Es un documento nuevo: aunque los insets no hayan cambiado,
                 // hay que volver a inyectar las métricas en su DOM.
                 invalidateLayoutMetrics();

@@ -111,6 +111,9 @@ public class QuickOrderActivity extends AppCompatActivity {
         audioButton = findViewById(R.id.quick_order_audio);
         audioButton.setOnClickListener(view -> toggleAudioRecording());
         submit.setOnClickListener(view -> submitOrder());
+        status.setOnClickListener(view -> {
+            if (options == null || companyChoices.isEmpty()) loadOptions();
+        });
         companyInput.setOnClickListener(view -> { if (companyInput.isEnabled()) companyInput.post(companyInput::showDropDown); });
         companyInput.setOnFocusChangeListener((view, focused) -> { if (focused && companyInput.isEnabled()) companyInput.post(companyInput::showDropDown); });
         companyInput.setOnItemClickListener((parent, view, position, id) -> {
@@ -140,15 +143,40 @@ public class QuickOrderActivity extends AppCompatActivity {
     }
 
     private void loadOptions() {
+        /* Captura la cookie en el hilo correcto antes de que el executor haga
+           la petición HTTP. Así el widget recibe exactamente las empresas que
+           muestra la aplicación principal. */
+        WidgetApi.syncSessionFromWebView();
         setLoading(true, "Cargando empresas, clientes y preparadores…");
         executor.execute(() -> {
             try {
                 WidgetApi.OrderOptions result = WidgetApi.loadOrderOptions();
                 runOnUiThread(() -> showOptions(result));
             } catch (Exception error) {
-                runOnUiThread(() -> setLoading(false, "Abre MDS Ventas e inicia sesión para crear un pedido."));
+                String message = error.getMessage();
+                runOnUiThread(() -> showOptionsError(message == null || message.trim().isEmpty()
+                        ? "No se pudieron cargar las empresas. Toca aquí para reintentar."
+                        : message + " Toca aquí para reintentar."));
             }
         });
+    }
+
+    private void showOptionsError(String message) {
+        options = null;
+        selectedCompanyId = 0;
+        selectedClientId = 0;
+        companyChoices.clear();
+        clients.clear();
+        filteredClients.clear();
+        companyInput.setAdapter(null);
+        companyInput.setText("", false);
+        companyInput.setEnabled(false);
+        companyInput.setHint("Toca el aviso para reintentar");
+        clientInput.setAdapter(null);
+        clientInput.setText("", false);
+        clientInput.setEnabled(false);
+        clientInput.setHint("Primero selecciona una empresa");
+        setLoading(false, message);
     }
 
     private void showOptions(WidgetApi.OrderOptions result) {
@@ -170,7 +198,9 @@ public class QuickOrderActivity extends AppCompatActivity {
         preparerInput.setVisibility(showPreparer ? View.VISIBLE : View.GONE);
         preparerLabel.setVisibility(showPreparer ? View.VISIBLE : View.GONE);
         filterClients();
-        setLoading(false, result.companies.isEmpty() ? "No tienes ninguna empresa asignada para crear pedidos." : "Selecciona empresa y cliente.");
+        setLoading(false, result.companies.isEmpty()
+                ? "No se recibieron empresas. Toca aquí para actualizar el widget."
+                : "Selecciona empresa y cliente.");
     }
 
     private void filterClients() {

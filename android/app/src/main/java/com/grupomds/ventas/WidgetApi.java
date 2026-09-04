@@ -3,6 +3,8 @@ package com.grupomds.ventas;
 import android.webkit.CookieManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -21,11 +23,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /** Cliente autenticado y limitado a las rutas privadas usadas por los widgets. */
 final class WidgetApi {
     static final String BASE_URL = "https://ventasmds.matriculadosdelsur.com";
     private static final int TIMEOUT_MS = 15000;
+    private static final String SESSION_COOKIE_NAME = "mds_ventas_session";
+    private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
+    private static final Object SESSION_LOCK = new Object();
+    /* El widget usa HttpURLConnection y la aplicación principal usa WebView.
+       Se conserva una copia en memoria del encabezado de sesión para que las
+       dos capas compartan la misma autenticación sin abrir una segunda sesión. */
+    private static volatile String sessionCookies = "";
 
     static final class Flow {
         final int id;
@@ -173,6 +184,66 @@ final class WidgetApi {
 
     private WidgetApi() { }
 
+    /** Debe llamarse antes de abrir un widget que necesite datos privados.
+        CookieManager se consulta en su hilo principal; hacerlo desde el hilo
+        del widget provocaba listas vacías en determinados Android/WebView. */
+    static void syncSessionFromWebView() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            readCookiesOnMainThread();
+            return;
+        }
+        CountDownLatch latch = new CountDownLatch(1);
+        MAIN_HANDLER.post(() -> {
+            try { readCookiesOnMainThread(); }
+            finally { latch.countDown(); }
+        });
+        try { latch.await(1200, TimeUnit.MILLISECONDS); }
+        catch (InterruptedException error) { Thread.currentThread().interrupt(); }
+    }
+
+    private static void readCookiesOnMainThread() {
+        CookieManager manager = CookieManager.getInstance();
+        manager.setAcceptCookie(true);
+        manager.flush();
+        String cookies = manager.getCookie(BASE_URL + "/index.php");
+        if (cookies != null && !cookies.trim().isEmpty()) sessionCookies = cookies.trim();
+    }
+
+    private static boolean hasSessionCookie(String cookies) {
+        if (cookies == null) return false;
+        for (String cookie : cookies.split(";\\s*")) {
+            if (cookie.startsWith(SESSION_COOKIE_NAME + "=")) return cookie.length() > SESSION_COOKIE_NAME.length() + 1;
+        }
+        return false;
+    }
+
+    private static void rememberCookie(String value) {
+        if (value == null) return;
+        String pair = value.split(";", 2)[0].trim();
+        int separator = pair.indexOf('=');
+        if (separator <= 0) return;
+        String name = pair.substring(0, separator).trim();
+        synchronized (SESSION_LOCK) {
+            List<String> kept = new ArrayList<>();
+            for (String current : sessionCookies.split(";\\s*")) {
+                if (!current.isEmpty() && !current.startsWith(name + "=")) kept.add(current);
+            }
+            kept.add(pair);
+            StringBuilder joined = new StringBuilder();
+            for (String current : kept) {
+                if (joined.length() > 0) joined.append("; ");
+                joined.append(current);
+            }
+            sessionCookies = joined.toString();
+        }
+        MAIN_HANDLER.post(() -> {
+            CookieManager manager = CookieManager.getInstance();
+            manager.setAcceptCookie(true);
+            manager.setCookie(BASE_URL + "/", value);
+            manager.flush();
+        });
+    }
+
     private static HttpURLConnection open(String page, String method) throws IOException {
         URL url = new URL(BASE_URL + "/index.php?page=" + page);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -181,21 +252,22 @@ final class WidgetApi {
         connection.setRequestMethod(method);
         connection.setInstanceFollowRedirects(false);
         connection.setRequestProperty("Accept", "application/json");
-        String cookies = CookieManager.getInstance().getCookie(BASE_URL);
-        if (cookies != null && !cookies.trim().isEmpty()) {
-            connection.setRequestProperty("Cookie", cookies);
+        connection.setRequestProperty("X-Requested-With", "MDSVentasWidget");
+        connection.setRequestProperty("Cache-Control", "no-cache");
+        syncSessionFromWebView();
+        String cookies = sessionCookies;
+        if (!hasSessionCookie(cookies)) {
+            throw new IOException("La sesión de MDS Ventas no está disponible. Abre la aplicación, inicia sesión y vuelve al widget.");
         }
+        connection.setRequestProperty("Cookie", cookies);
         return connection;
     }
 
     private static void saveCookies(HttpURLConnection connection) {
         for (Map.Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
             if (header.getKey() == null || !"Set-Cookie".equalsIgnoreCase(header.getKey())) continue;
-            for (String cookie : header.getValue()) {
-                if (cookie != null) CookieManager.getInstance().setCookie(BASE_URL, cookie);
-            }
+            for (String cookie : header.getValue()) rememberCookie(cookie);
         }
-        CookieManager.getInstance().flush();
     }
 
     private static String read(InputStream stream) throws IOException {
@@ -214,10 +286,12 @@ final class WidgetApi {
         saveCookies(connection);
         String body = read(code >= 400 ? connection.getErrorStream() : connection.getInputStream());
         connection.disconnect();
-        if (code >= 300 || body.trim().startsWith("<")) {
-            throw new IOException("Abre MDS Ventas e inicia sesión para actualizar el widget.");
+        if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308 || body.trim().startsWith("<")) {
+            throw new IOException("La sesión ha caducado. Abre MDS Ventas, inicia sesión y vuelve a intentarlo.");
         }
-        return new JSONObject(body);
+        if (code < 200 || code >= 300) throw new IOException("No se pudieron cargar los datos del pedido (HTTP " + code + "). Toca para reintentar.");
+        try { return new JSONObject(body); }
+        catch (Exception error) { throw new IOException("El servidor devolvió una respuesta no válida. Toca para reintentar."); }
     }
 
     static List<Flow> loadDueFlows() throws Exception { return loadDueFlows(0, new java.util.HashSet<>()); }
@@ -261,8 +335,9 @@ final class WidgetApi {
         if (path == null || !path.matches("index\\.php\\?page=media_file&type=avatar&id=[1-9][0-9]*")) return null;
         HttpURLConnection connection = (HttpURLConnection) new URL(BASE_URL + "/" + path).openConnection();
         connection.setConnectTimeout(TIMEOUT_MS); connection.setReadTimeout(TIMEOUT_MS); connection.setInstanceFollowRedirects(false);
-        String cookies = CookieManager.getInstance().getCookie(BASE_URL);
-        if (cookies != null && !cookies.trim().isEmpty()) connection.setRequestProperty("Cookie", cookies);
+        syncSessionFromWebView();
+        if (!hasSessionCookie(sessionCookies)) { connection.disconnect(); return null; }
+        connection.setRequestProperty("Cookie", sessionCookies);
         int code = connection.getResponseCode(); saveCookies(connection);
         Bitmap bitmap = null;
         if (code >= 200 && code < 300) {
